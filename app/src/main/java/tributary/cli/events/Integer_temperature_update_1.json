@@ -1,0 +1,11 @@
+{
+  "headers": {
+    "timestamp": "2024-08-01T12:34:56",
+    "id": "temperature_1",
+    "payloadType": "Integer"
+  },
+  "key": "1",
+  "value": {
+    "temperature": 18.5
+  }
+}

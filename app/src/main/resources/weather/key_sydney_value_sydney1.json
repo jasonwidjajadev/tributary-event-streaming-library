@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "timestamp": "2024-08-01T18:00:00",
+    "id": "sydney_temperature_1",
+    "payloadType": "Integer"
+  },
+  "key": "sydney",
+  "value": {
+    "location": "Sydney",
+    "temperature": 13,
+    "humidity": 73,
+    "wind": 10,
+    "condition": "Clear"
+  }
+}

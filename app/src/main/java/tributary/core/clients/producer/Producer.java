@@ -1,41 +1,57 @@
 package tributary.core.clients.producer;
 
 /**
- * The main API that applications use to send record  to topics.
+ * The main API that applications use to send record to topics.
  */
 
-public class Producer<T> {
-    private String id;
-    private T type;
+public class Producer<K, V> {
+    private K id;
+    private V type;
     private String allocation;
 
-    public Producer(String id, T type) {
+    /**
+     * Constructs a new Producer with the given ID and type.
+     *
+     * @param id   the unique ID for the producer
+     * @param type the type of events the producer will produce
+     */
+    public Producer(K id, V type) {
         this.id = id;
         this.type = type;
         this.allocation = null;
     }
 
-    public Producer(String id, T type, String allocation) {
+    /**
+     *
+     * @param id         the unique ID for the producer
+     * @param type       the type of events the producer will produce
+     * @param allocation the allocation method for partition selection (Random or Manual)
+     */
+    public Producer(K id, V type, String allocation) {
         this.id = id;
         this.type = type;
         this.allocation = allocation;
     }
 
-    // public void send(ProducerRecord record) {
-    //     //TODO
-    // }
+    public String getAllocation() {
+        return allocation;
+    }
+
+    public V getType() {
+        return type;
+    }
+
+    public void setType(V type) {
+        this.type = type;
+    }
+
+    public String getTypeName() {
+        return type.getClass().getSimpleName().toLowerCase();
+    }
 
     @Override
     public String toString() {
-        return "Producer{id='" + id + "', type='" + type + "', allocation='" + allocation + "'}";
+        return "Producer: [id ='" + id + "', type ='" + type + "', allocation ='" + allocation + "']";
     }
-}
 
-/**
- * 6. - Creates a new producer which produces events of the given type.
- *    - allocation is either Random or Manual, determining which method of
- *      partition selection is used for publishing events.
- *
- *      Output: A message confirming the producer’s creation.
- *      Usage: create producer <id> <type> <allocation>
- */
+}

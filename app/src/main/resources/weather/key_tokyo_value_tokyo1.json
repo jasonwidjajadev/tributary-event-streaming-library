@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "timestamp": "2024-08-01T18:00:00",
+    "id": "tokyo_temperature_1",
+    "payloadType": "Integer"
+  },
+  "key": "tokyo",
+  "value": {
+    "location": "Tokyo",
+    "temperature": 31,
+    "humidity": 65,
+    "wind": 11,
+    "condition": "Sunny"
+  }
+}

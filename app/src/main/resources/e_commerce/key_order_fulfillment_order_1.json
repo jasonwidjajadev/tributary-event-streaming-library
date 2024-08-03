@@ -1,0 +1,13 @@
+{
+  "headers": {
+    "timestamp": "2024-08-01T18:00:00",
+    "id": "order_1",
+    "payloadType": "String"
+  },
+  "key": "order_fulfillment",
+  "value": {
+    "inventoryStatus": "",
+    "packingStatus": "",
+    "fulfillmentStatus": ""
+  }
+}

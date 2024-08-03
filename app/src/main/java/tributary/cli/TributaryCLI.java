@@ -1,11 +1,15 @@
 package tributary.cli;
 
+import java.util.List;
 import java.util.Scanner;
 import tributary.api.API;
 import tributary.api.APIFactory;
 
 public class TributaryCLI {
     private static API api = APIFactory.createAdminClient();
+    private static final int DELAY = 0;
+    // private static final int DELAY = 3000;
+
     private static final String RESET = "\u001B[0m";
     private static final String BLACK = "\033[0;30m";
     private static final String RED = "\033[0;31m";
@@ -92,7 +96,11 @@ public class TributaryCLI {
                 }
                 break;
             case "produce":
-                if (arg.length == 6 && "event".equals(arg[1])) {
+                if (arg.length == 5 && "event".equals(arg[1])) {
+                    //Radom producer
+                    produceEvent(arg[2], arg[3], arg[4]);
+                } else if (arg.length == 6 && "event".equals(arg[1])) {
+                    //Manual producer
                     produceEvent(arg[2], arg[3], arg[4], arg[5]);
                 }
                 break;
@@ -125,14 +133,18 @@ public class TributaryCLI {
     private static void createTopic(String topidId, String type) {
         try {
             if (api.createTopic(topidId, type)) {
-                System.out.println(MAGENTA + "+ " + RESET + "Topic created, id:         " + topidId);
+                System.out.println(MAGENTA + "+ " + RESET + "Topic created with id:     " + topidId);
+                Thread.sleep(DELAY);
                 System.out.println(MAGENTA + "+ " + RESET + "Topic type:                " + type);
                 System.out.println("");
+                Thread.sleep(DELAY);
             } else {
                 System.err.println("Failed to create topic: \"" + topidId + "\"");
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
     }
@@ -147,14 +159,18 @@ public class TributaryCLI {
     private static void createPartition(String topicId, String partitionId) {
         try {
             if (api.createPartition(topicId, partitionId)) {
-                System.out.println(MAGENTA + "+ " + RESET + "Partition created, id:     " + partitionId);
+                System.out.println(MAGENTA + "+ " + RESET + "Partition created with id  " + partitionId);
+                Thread.sleep(DELAY);
                 System.out.println(MAGENTA + "+ " + RESET + "Created in topic:          " + topicId);
                 System.out.println("");
+                Thread.sleep(DELAY);
             } else {
                 System.err.println("Failed to create partition: \"" + partitionId + "\"");
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -171,14 +187,19 @@ public class TributaryCLI {
         try {
             if (api.createConsumerGroup(groupId, topicId, rebalancing)) {
                 System.out.println(MAGENTA + "+ " + RESET + "Consumer group created:    " + groupId);
+                Thread.sleep(DELAY);
                 System.out.println(MAGENTA + "+ " + RESET + "Subscribed to topic:       " + topicId);
+                Thread.sleep(DELAY);
                 System.out.println(MAGENTA + "+ " + RESET + "Rebalancing strategy:      " + rebalancing);
                 System.out.println("");
+                Thread.sleep(DELAY);
             } else {
                 System.err.println("Failed to create consumer group: \"" + groupId + "\"");
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -191,14 +212,18 @@ public class TributaryCLI {
     private static void createConsumer(String groupId, String consumerId) {
         try {
             if (api.createConsumer(groupId, consumerId)) {
-                System.out.println(MAGENTA + "+ " + RESET + "Consumer created, id:      " + consumerId);
+                System.out.println(MAGENTA + "+ " + RESET + "Consumer created with id:  " + consumerId);
+                Thread.sleep(DELAY);
                 System.out.println(MAGENTA + "+ " + RESET + "Consumer in group:         " + groupId);
                 System.out.println("");
+                Thread.sleep(DELAY);
             } else {
                 System.err.println("Failed to create consumer: \"" + consumerId + "\"");
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -211,15 +236,21 @@ public class TributaryCLI {
      */
     private static void deleteConsumer(String consumerId) {
         try {
-            String groupId = api.deleteConsumer(consumerId);
-            if (groupId != null) {
+            List<String> groupsId = api.deleteConsumer(consumerId);
+            if (groupsId != null) {
                 System.out.println(BOLD_RED + "- " + RESET + "Consumer deleted, id:      " + consumerId);
-                System.out.println(BOLD_RED + "- " + RESET + "Consumer was from group:   " + groupId);
+                Thread.sleep(DELAY);
+                for (String g : groupsId) {
+                    System.out.println(BOLD_RED + "- " + RESET + "Consumer was from group:   " + g);
+                    Thread.sleep(DELAY);
+                }
             } else {
                 System.err.println("Failed to delete consumer: \"" + consumerId + "\"");
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -235,13 +266,18 @@ public class TributaryCLI {
         try {
             if (api.createProducer(producerId, type, allocation)) {
                 System.out.println(MAGENTA + "+ " + RESET + "Producer created, id:      " + producerId);
+                Thread.sleep(DELAY);
                 System.out.println(MAGENTA + "+ " + RESET + "Producer type:             " + type);
-                System.out.println(MAGENTA + "+ " + RESET + "Producer allocatio:        " + allocation);
+                Thread.sleep(DELAY);
+                System.out.println(MAGENTA + "+ " + RESET + "Producer allocation:       " + allocation);
+                Thread.sleep(DELAY);
             } else {
                 System.err.println("Failed to create producer: \"" + producerId + "\"");
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -258,18 +294,27 @@ public class TributaryCLI {
      *      producer publishes events to a manually specified partition
      *
      *      Output: The event id, the id of the partition it is currently in.
-     *      Usage: produce event <producer> <topic> <event> <partition>
+     *      Usage: produce event <producer> <topic> <event>
      */
-    private static void produceEvent(String producerId, String topicId, String event, String partitionId) {
+    private static void produceEvent(String producerId, String topicId, String event) {
         try {
-            if (api.produceEvent(producerId, topicId, event, partitionId)) {
-                System.out.println(MAGENTA + "+ " + RESET + "Event created, id:      " + event);
-                System.out.println(MAGENTA + "+ " + RESET + "Assigned to partition:  " + partitionId);
-            } else {
-                System.err.println("Failed to create event: \"" + event + "\"");
-            }
+            api.produceEvent(producerId, topicId, event);
+            Thread.sleep(DELAY);
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void produceEvent(String producerId, String topicId, String event, String partitionId) {
+        try {
+            api.produceEvent(producerId, topicId, event, partitionId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -290,6 +335,7 @@ public class TributaryCLI {
      *      Usage: consume events <consumer> <partition> <number of events>
      */
     //TODO -------------- saturday finish
+
     /**
      * 10. - Output: Prints a visual display of the given topic, including all
      *       partitions and all of the events currently in each partition.
@@ -344,3 +390,129 @@ public class TributaryCLI {
     // Video
     //TODO -------------- Monday finish
 }
+
+/*
+
+
+
+
+//** create topic <id> <type>
+// create topic weather_update Integer
+// create topic e_commerce_order String
+create topic topic_A Integer
+create topic topic_B String
+
+//** create partition <topic> <id>
+// create partition weather_update 0
+// create partition weather_update 1
+// create partition weather_update 2
+
+// create partition e_commerce_order 0
+// create partition e_commerce_order 1
+// create partition e_commerce_order 2
+
+create partition topic_A A_P0
+create partition topic_A A_P1
+create partition topic_A A_P2
+create partition topic_A A_P3
+create partition topic_A A_P4
+
+create partition topic_B B_P0
+create partition topic_B B_P1
+create partition topic_B B_P2
+create partition topic_B B_P3
+create partition topic_B B_P4
+create partition topic_B B_P5
+create partition topic_B B_P6
+
+//** create consumer group <id> <topic> <rebalancing>
+// create consumer group weather_group weather_update range
+// create consumer group e_commerce_group e_commerce_order round_robin
+
+create consumer group consumer_group_A topic_A range
+create consumer group consumer_group_B topic_B round_robin
+
+//** create consumer <group> <id>
+// create consumer weather_group consumer_1_real_time_alert
+// create consumer weather_group consumer_2_ai_weather_predictions
+// create consumer weather_group consumer_3_stores_weather_data
+
+// create consumer e_commerce_group consumer_1_order_validation
+// create consumer e_commerce_group consumer_2_order_fullfillment
+// create consumer e_commerce_group consumer_3_order_shipping_service
+// create consumer e_commerce_group consumer_4_order_review
+
+create consumer consumer_group_A consumer_I
+create consumer consumer_group_A consumer_II
+create consumer consumer_group_A consumer_III
+
+create consumer consumer_group_B consumer_I
+create consumer consumer_group_B consumer_II
+create consumer consumer_group_B consumer_III
+create consumer consumer_group_B consumer_IV
+create consumer consumer_group_B consumer_V
+
+//** delete consumer <consumer>
+// delete consumer consumer_4
+delete consumer consumer_V
+
+//** create producer <id> <type> <allocation>
+create producer producer_1 Integer manual
+create producer producer_2 String random
+
+//** produce event <producer> <topic> <event> <partition>
+
+// produce event producer_1 weather_update /weather/key_sydney_value_sydney1.json partition_0
+// produce event producer_1 weather_update /weather/key_sydney_value_paris1.json partition_1
+// produce event producer_1 weather_update /weather/key_sydney_value_tokyo1.json partition_2
+
+// produce event producer_1 e_commerce_order /e_commerce/key_order_fulfillment_order_1.json partition_0
+// produce event producer_1 e_commerce_order /e_commerce/key_order_shipping_order_1.json partition_1
+// produce event producer_1 e_commerce_order /e_commerce/key_order_validation_order_1.json partition_2
+
+create topic topic_A Integer
+create partition topic_A A_P0
+create producer producer_1 Integer manual
+
+
+produce event producer_1 topic_A integer_key_0_event_0.json A_P0
+produce event producer_1 topic_A integer_key_1_event_1.json A_P1
+produce event producer_1 topic_A integer_key_2_event_2.json A_P2
+produce event producer_1 topic_A integer_key_3_event_3.json A_P3
+produce event producer_1 topic_A integer_key_4_event_4.json A_P4
+
+produce event producer_1 topic_A integer_key_1_event_1.json A_P0
+
+
+create topic topic_B String
+create partition topic_B B_P0
+create producer producer_2 String random
+
+
+produce event producer_2 topic_B string_key_0_event_0.json
+produce event producer_2 topic_B string_key_1_event_1.json
+produce event producer_2 topic_B string_key_2_event_2.json
+produce event producer_2 topic_B string_key_3_event_3.json
+produce event producer_2 topic_B string_key_4_event_4.json
+produce event producer_2 topic_B string_key_5_event_5.json
+produce event producer_2 topic_B string_key_6_event_6.json
+
+//** consume event <consumer> <partition>
+
+//** consume events <consumer> <partition> <number of events>
+
+//** show topic <topic>
+show topic topic_A
+show topic topic_B
+
+//** show consumer group <group>
+
+//** parallel produce (<producer>, <topic>, <event>), ...
+
+//** parallel consume (<consumer>, <partition>)
+
+//** set consumer group rebalancing <group> <rebalancing>
+
+//** playback <consumer> <partition> <offset>
+
+*/

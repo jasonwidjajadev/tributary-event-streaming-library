@@ -1,49 +1,41 @@
 package tributary.core.clients.consumer;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConsumerGroup {
-    private String id;
+    private String groupId;
     private String topicId;
     private String rebalancing;
-    private Map<String, Consumer> consumers;
-    //TODO max - consumer group subscribes to one topic
-    //TODO max - consumer can subscribe to multiple partitions at the same time
+    private List<Consumer<?, ?>> consumers = new ArrayList<>();
 
-    public ConsumerGroup(String id, String topicId, String rebalancing) {
-        this.id = id;
+    public ConsumerGroup(String groupId, String topicId, String rebalancing) {
+        this.groupId = groupId;
         this.topicId = topicId;
         this.rebalancing = rebalancing;
-        this.consumers = new HashMap<>();
     }
 
-    public boolean createConsumer(String consumerId) {
-        if (consumers.containsKey(consumerId)) {
-            throw new IllegalArgumentException("consumerId already exist on this group");
-        }
-        consumers.put(consumerId, new Consumer(consumerId));
-        return true;
+    public void addConsumer(Consumer<?, ?> consumer) {
+        consumers.add(consumer);
     }
 
-    public void deleteConsumer(String consumerId) {
-        consumers.remove(consumerId);
+    public void removeConsumer(String consumerId) {
+        consumers.removeIf(consumer -> consumer.getConsumerId().equals(consumerId));
     }
 
-    /**
-     * 11. - Shows all consumers in the consumer group, and which partitions each
-     *       consumer is receiving events from.
-     *       Usage: show consumer group <group>
-     */
-    //TODO maxxximussss, not yet implemented, create a table, nicely formatted, etc...
-    public void showConsumerGroup() {
-        System.out.println("");
-        System.out.println("> Consumer group: " + id);
-        System.out.println("");
-        System.out.printf("%-10s%10s%n", "Consumers", "| Partition", "| Offset");
-        System.out.println("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
-        System.out.printf("%-10s%10s%n", "consumer1", "| 1", "| 0");
-        System.out.printf("%-10s%10s%n", "consumer1", "| 2", "| 4");
-        System.out.printf("%-10s%10s%n", "consumer2", "| 2", "| 4");
+    public List<Consumer<?, ?>> getConsumers() {
+        return consumers;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public String getTopicId() {
+        return topicId;
+    }
+
+    public String getRebalancing() {
+        return rebalancing;
     }
 }

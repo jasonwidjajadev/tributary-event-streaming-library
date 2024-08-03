@@ -1,18 +1,28 @@
 package tributary.core.clients.admin;
 
+import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.json.JSONObject;
+import java.io.IOException;
+
 import tributary.core.clients.producer.Producer;
+import tributary.core.clients.producer.ProducerRecord;
+import tributary.core.common.Partition;
+import tributary.core.common.Topic;
 
 public class ProducerCoordinator {
-    private Map<String, Producer<?>> producers = new HashMap<>();
+    private static final String RESET = "\u001B[0m";
+    private static final String MAGENTA = "\033[0;35m";
+    private static final int DELAY = 0;
+    private Map<String, Producer<?, ?>> producers = new HashMap<>();
 
-    public boolean createProducer(String producerId, String type, String allocation) {
+    public boolean createProducer(String producerId, Object instance, String allocation) {
         if (producers.containsKey(producerId)) {
             throw new IllegalArgumentException("Error: choose another name, producerId already exist!");
         }
-        producers.put(producerId, new Producer<>(producerId, type, allocation));
+        producers.put(producerId, new Producer<>(producerId, instance, allocation));
         return true;
     }
 
@@ -27,11 +37,142 @@ public class ProducerCoordinator {
      *
      *      Output: The event id, the id of the partition it is currently in.
      *      Usage: produce event <producer> <topic> <event> <partition>
+     *
+     *      Manual Producer,
      */
-    public boolean produceEvent(String producerId, String topicId, String event, String partitionId) {
-        // // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method 'produceEvent'");
-        // ProducerRecord<String, String> record = new ProducerRecord<>(topicId, event);
-        return true;
+    public boolean produceEvent(String producerId, Topic<?> topic, String topicId, String event) {
+        Producer<?, ?> producer = producers.get(producerId);
+        if (producer == null) {
+            throw new IllegalArgumentException("Producer ID not found!");
+        }
+        if (!isTypeCompatible(producer.getType(), topic.getType())) {
+            System.err.println("Error: producer can't produce to this topic, type mismatch");
+            return false;
+        }
+        try {
+            // String eventJson = new String(Files.readAllBytes(Paths.get(event)));
+            JSONObject eventNode = new JSONObject(FileLoader.loadResourceFile(event));
+            // JSONObject eventNode = new JSONObject(eventJson);
+            JSONObject headers = eventNode.getJSONObject("headers");
+            Long timestamp = headers.getLong("timestamp");
+            String eventId = headers.getString("id");
+            String payloadType = headers.getString("payloadType");
+
+            String key = eventNode.getString("key");
+            String value = eventNode.getJSONObject("value").toString();
+
+            if (!producer.getTypeName().equals(payloadType.toLowerCase())) {
+                System.err.println("Error: payload type mismatch, producer and event key");
+                return false;
+            }
+
+            if (!topic.getTypeName().equals(payloadType.toLowerCase())) {
+                System.err.println("Error: payload type mismatch, topic and event key");
+                return false;
+            }
+
+            String allocation = producer.getAllocation();
+            if (allocation.equals("manual")) {
+                System.err.println("Error: producer is manual producer, must provide partitionId");
+                return false;
+            }
+            Partition<String, ?> partition = topic.getRandomPartition();
+            if (partition == null) {
+                throw new IllegalArgumentException("Partition not found!");
+            }
+            ProducerRecord<String, String> record = new ProducerRecord<>(topicId, partition.getPartitionId(), timestamp,
+                    eventId, key, value);
+            partition.addRecord(record);
+
+            System.out.println("📩 " + "Event created in topic:   " + topicId);
+            Thread.sleep(DELAY);
+            System.out.println("📩 " + "Created in partition:     " + partition.getPartitionId());
+            Thread.sleep(DELAY);
+            System.out.println("📩 " + "Created with id:          " + eventId);
+            System.out.println("");
+            return true;
+        } catch (NoSuchFileException e) {
+            System.err.println("Error: JSON file not found at path: " + event);
+            return false;
+        } catch (IOException e) {
+            System.err.println("Error reading JSON file: " + e.getMessage());
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean produceEvent(String producerId, Topic<?> topic, String topicId, String event, String partitionId) {
+        Producer<?, ?> producer = producers.get(producerId);
+        if (producer == null) {
+            throw new IllegalArgumentException("Producer ID not found!");
+        }
+        if (!isTypeCompatible(producer.getType(), topic.getType())) {
+            System.err.println("Error: producer can't produce to this topic, type mismatch");
+            return false;
+        }
+        try {
+            // String eventJson = new String(Files.readAllBytes(Paths.get(event)));
+            JSONObject eventNode = new JSONObject(FileLoader.loadResourceFile(event));
+            // JSONObject eventNode = new JSONObject(eventJson);
+
+            JSONObject headers = eventNode.getJSONObject("headers");
+            Long timestamp = headers.getLong("timestamp");
+            String eventId = headers.getString("id");
+            String payloadType = headers.getString("payloadType");
+
+            String key = eventNode.getString("key");
+            String value = eventNode.getJSONObject("value").toString();
+
+            if (!producer.getTypeName().equals(payloadType.toLowerCase())) {
+                System.err.println("Error: payload type mismatch, producer and event key");
+                return false;
+            }
+
+            if (!topic.getTypeName().equals(payloadType.toLowerCase())) {
+                System.err.println("Error: payload type mismatch, topic and event key");
+                return false;
+            }
+
+            String allocation = producer.getAllocation();
+            if (allocation.equals("random")) {
+                System.err.println("Error: producer is Random producer, remove partitionId");
+                return false;
+            }
+            Partition<String, ?> partition = topic.getPartition(partitionId);
+            if (partition == null) {
+                throw new IllegalArgumentException("Partition not found!");
+            }
+            ProducerRecord<String, String> record = new ProducerRecord<>(topicId, partition.getPartitionId(), timestamp,
+                    eventId, key, value);
+            partition.addRecord(record);
+
+            System.out.println("📩 " + "Event created in topic:   " + topicId);
+            Thread.sleep(DELAY);
+            System.out.println("📩 " + "Created in partition:     " + partitionId);
+            Thread.sleep(DELAY);
+            System.out.println("📩 " + "Created with id:          " + eventId);
+            System.out.println("");
+            return true;
+        } catch (NoSuchFileException e) {
+            System.err.println("Error: JSON file not found at path: " + event);
+            return false;
+        } catch (IOException e) {
+            System.err.println("Error reading JSON file: " + e.getMessage());
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private boolean isTypeCompatible(Object type, Object event) {
+        if (type instanceof String && event instanceof String) {
+            return true;
+        } else if (type instanceof Integer && event instanceof Integer) {
+            return true;
+        }
+        return false;
     }
 }

@@ -1,0 +1,11 @@
+{
+  "headers": {
+    "timestamp": "1659275200000",
+    "id": "event_3",
+    "payloadType": "String"
+  },
+  "key": "3",
+  "value": {
+    "info": "event_3"
+  }
+}

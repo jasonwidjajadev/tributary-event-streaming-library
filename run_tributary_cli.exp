@@ -1,0 +1,181 @@
+#!/usr/bin/expect -f
+
+# Set an indefinite timeout for expect commands
+set timeout -1
+set one_second 0
+set two_seconds 0
+
+# Start the TributaryCLI program
+spawn java -cp app/src/main/java tributary.cli.TributaryCLI
+
+# ==============================================================================
+# create topic <id> <type> =====================================================
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create topic topic_A Integer\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create topic topic_B String\r"
+sleep $one_second
+
+# ==============================================================================
+# create partition <topic> <id> ================================================
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_A A_P0\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_A A_P1\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_A A_P2\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_A A_P3\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_A A_P4\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_B B_P0\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_B B_P1\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_B B_P2\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_B B_P3\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create partition topic_B B_P4\r"
+sleep $one_second
+
+# ==============================================================================
+# create consumer group <id> <topic> <rebalancing> =============================
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer group consumer_group_A topic_A range\r"
+sleep $one_second
+
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer group consumer_group_B topic_B round_robin\r"
+sleep $one_second
+
+# ==============================================================================
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_A consumer_I\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_A consumer_I\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_A consumer_II\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_A consumer_III\r"
+sleep $one_second
+
+# ------------------------------------------------------------------------------
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_A consumer_V\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_B consumer_I\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_B consumer_II\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_B consumer_III\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_B consumer_IV\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create consumer consumer_group_B consumer_V\r"
+sleep $one_second
+# ==============================================================================
+
+expect "Enter a command:"
+sleep $two_seconds
+send "delete consumer consumer_V\r"
+sleep $one_second
+
+# ==============================================================================
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create producer producer_1 Integer manual\r"
+sleep $one_second
+
+expect "Enter a command:"
+sleep $two_seconds
+send "create producer producer_2 String random\r"
+sleep $one_second
+
+# ==============================================================================
+
+# expect "Enter a command:"
+# sleep $two_seconds
+# send "produce event producer_1 topic_A integer_key_0_event_0.json A_P0\r"
+# sleep $one_second
+#
+# # ==============================================================================
+# expect "Enter a command:"
+# sleep $two_seconds
+# send "produce event producer_2 topic_B string_key_0_event_0.json\r"
+# sleep $one_second
+
+# quit =========================================================================
+expect "Enter a command:"
+sleep 2
+send "q\r"
+sleep 2
+expect eof

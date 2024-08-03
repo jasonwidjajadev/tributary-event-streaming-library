@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "timestamp": "2024-08-01T18:00:00",
+    "id": "paris_temperature_1",
+    "payloadType": "Integer"
+  },
+  "key": "paris",
+  "value": {
+    "location": "Paris",
+    "temperature": 23,
+    "humidity": 81,
+    "wind": 5,
+    "condition": "Mostly cloudy"
+  }
+}

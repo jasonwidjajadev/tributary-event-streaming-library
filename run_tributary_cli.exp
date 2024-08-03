@@ -162,16 +162,16 @@ sleep $one_second
 
 # ==============================================================================
 
-expect "Enter a command:"
-sleep $two_seconds
-send "produce event producer_1 topic_A integer_key_0_event_0.json A_P0\r"
-sleep $one_second
-
-# ==============================================================================
-expect "Enter a command:"
-sleep $two_seconds
-send "produce event producer_2 topic_B string_key_0_event_0.json\r"
-sleep $one_second
+# expect "Enter a command:"
+# sleep $two_seconds
+# send "produce event producer_1 topic_A integer_key_0_event_0.json A_P0\r"
+# sleep $one_second
+#
+# # ==============================================================================
+# expect "Enter a command:"
+# sleep $two_seconds
+# send "produce event producer_2 topic_B string_key_0_event_0.json\r"
+# sleep $one_second
 
 # quit =========================================================================
 expect "Enter a command:"

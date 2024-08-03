@@ -335,7 +335,6 @@ public class TributaryCLI {
      *      Usage: consume events <consumer> <partition> <number of events>
      */
     //TODO -------------- saturday finish
-
     /**
      * 10. - Output: Prints a visual display of the given topic, including all
      *       partitions and all of the events currently in each partition.

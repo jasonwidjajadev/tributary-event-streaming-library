@@ -481,7 +481,9 @@ produce event producer_1 topic_A integer_key_3_event_3.json A_P3
 produce event producer_1 topic_A integer_key_4_event_4.json A_P4
 
 produce event producer_1 topic_A integer_key_1_event_1.json A_P0
-
+produce event producer_1 topic_A integer_key_2_event_2.json A_P0
+produce event producer_1 topic_A integer_key_3_event_3.json A_P0
+produce event producer_1 topic_A integer_key_4_event_4.json A_P0
 
 create topic topic_B String
 create partition topic_B B_P0

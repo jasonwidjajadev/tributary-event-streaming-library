@@ -1,4 +1,4 @@
-#!/usr/bin/expect -f
+#!/usr/bin/expect
 
 # Set an indefinite timeout for expect commands
 set timeout -1
@@ -6,7 +6,9 @@ set one_second 0
 set two_seconds 0
 
 # Start the TributaryCLI program
-spawn java -cp app/src/main/java tributary.cli.TributaryCLI
+# spawn java -cp app/src/main/java tributary.cli.TributaryCLI
+
+spawn java -cp $env(CLASSPATH) tributary.cli.TributaryCLI
 
 # ==============================================================================
 # create topic <id> <type> =====================================================
@@ -162,12 +164,13 @@ sleep $one_second
 
 # ==============================================================================
 
-# expect "Enter a command:"
-# sleep $two_seconds
-# send "produce event producer_1 topic_A integer_key_0_event_0.json A_P0\r"
-# sleep $one_second
-#
-# # ==============================================================================
+expect "Enter a command:"
+sleep $two_seconds
+send "produce event producer_1 topic_A integer_key_0_event_0.json A_P0\r"
+sleep $one_second
+
+# ==============================================================================
+
 # expect "Enter a command:"
 # sleep $two_seconds
 # send "produce event producer_2 topic_B string_key_0_event_0.json\r"

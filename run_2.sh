@@ -54,12 +54,6 @@ if [ $? -eq 0 ]; then
         send "create topic topic_A Integer\r"
         sleep \$one_second
 
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create topic topic_B String\r"
-        sleep \$one_second
-
         # ======================================================================
         # create partition <topic> <id> ========================================
 
@@ -93,54 +87,6 @@ if [ $? -eq 0 ]; then
         send "create partition topic_A A_P4\r"
         sleep \$one_second
 
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create partition topic_B B_P0\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create partition topic_B B_P1\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create partition topic_B B_P2\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create partition topic_B B_P3\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create partition topic_B B_P4\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create partition topic_B B_P5\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create partition topic_B B_P6\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create partition topic_B B_P7\r"
-        sleep \$one_second
-
         # ======================================================================
         # create consumer group <id> <topic> <rebalancing> =====================
 
@@ -148,12 +94,6 @@ if [ $? -eq 0 ]; then
         sleep \$two_seconds
         after \$half_second
         send "create consumer group consumer_group_A topic_A Range\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create consumer group consumer_group_B topic_B RoundRobin\r"
         sleep \$one_second
 
         # ======================================================================
@@ -182,43 +122,14 @@ if [ $? -eq 0 ]; then
         send "create consumer consumer_group_A consumer_III\r"
         sleep \$one_second
 
-        # ----------------------------------------------------------------------
-
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
         send "create consumer consumer_group_A consumer_V\r"
         sleep \$one_second
 
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create consumer consumer_group_B consumer_I\r"
-        sleep \$one_second
 
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create consumer consumer_group_B consumer_II\r"
-        sleep \$one_second
 
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create consumer consumer_group_B consumer_III\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create consumer consumer_group_B consumer_IV\r"
-        sleep \$one_second
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "create consumer consumer_group_B consumer_V\r"
-        sleep \$one_second
         # ======================================================================
 
         expect "Enter a command:"
@@ -297,8 +208,6 @@ if [ $? -eq 0 ]; then
         send "produce event producer_1 topic_A integer_key_1_event_1.json A_P0\r"
         sleep \$one_second
 
-
-
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
@@ -324,65 +233,61 @@ if [ $? -eq 0 ]; then
         after \$half_second
         send "show topic topic_A\r"
         sleep \$one_second
-        # quit =================================================================
-
+        # ===================== EVENT CONSUMPTION TEST =========================
+        
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "produce event producer_2 topic_B string_key_0_event_0.json\r"
+        send "consume events consumer_I A_P0 6\r"
         sleep \$one_second
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "produce event producer_2 topic_B string_key_1_event_1.json\r"
+        send "consume event consumer_I A_P1\r"
         sleep \$one_second
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "produce event producer_2 topic_B string_key_2_event_2.json\r"
+        send "consume event consumer_I A_P1\r"
         sleep \$one_second
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "produce event producer_2 topic_B string_key_3_event_3.json\r"
+        send "show consumer group consumer_group_A\r"
         sleep \$one_second
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "produce event producer_2 topic_B string_key_4_event_4.json\r"
+        send "set consumer group rebalancing consumer_group_A RoundRobin\r"
+        sleep \$one_second
+        
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "show consumer group consumer_group_A\r"
         sleep \$one_second
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "produce event producer_2 topic_B string_key_5_event_5.json\r"
+        send "playback consumer_I A_P0 2\r"
         sleep \$one_second
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "produce event producer_2 topic_B string_key_6_event_6.json\r"
+        send "show consumer group consumer_group_A\r"
         sleep \$one_second
-
-        # ======================================================================
-
+        
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "show topic topic_A\r"
+        send "playback consumer_I A_P0 10\r"
         sleep \$one_second
-        # quit =================================================================
-
-        expect "Enter a command:"
-        sleep \$two_seconds
-        after \$half_second
-        send "show topic topic_B\r"
-        sleep \$one_second
-
 
         # quit =================================================================
         expect "Enter a command:"

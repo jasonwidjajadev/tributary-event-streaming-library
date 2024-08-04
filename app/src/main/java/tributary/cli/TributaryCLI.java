@@ -111,6 +111,24 @@ public class TributaryCLI {
                     showConsumerGroup(arg[3]);
                 }
                 break;
+            case "consume":
+                if (arg.length == 4 && "event".equals(arg[1])) {
+                    consumeSingleEvent(arg[2], arg[3]);
+                } else if (arg.length == 5 && "events".equals(arg[1])) {
+                    consumeMultipleEvents(arg[2], arg[3], Integer.parseInt(arg[4]));
+                }
+
+                break;
+            case "set":
+                if (arg.length == 6 && "consumer".equals(arg[1]) && "rebalancing".equals(arg[3])) {
+                    consumerGroupRebalance(arg[5], arg[4]);
+                }
+                break;
+            case "playback":
+                if (arg.length == 4) {
+                    consumerGroupPlayback(arg[1], arg[2], Integer.parseInt(arg[3]));
+                }
+                break;
             default:
                 System.out.println("Unknown command: \"" + command + "\"");
             }
@@ -318,9 +336,6 @@ public class TributaryCLI {
         }
     }
 
-    //Example
-    //TODO -------------- friday finish Max ->> to finish assignement
-
     /**
      * 8. - The given consumer consumes an event from the given partition.
      *      Precondition: The consumer is already allocated to the given partition.
@@ -328,13 +343,33 @@ public class TributaryCLI {
      *      received the event.
      *      Usage: consume event <consumer> <partition>
      */
+    private static void consumeSingleEvent(String consumerId, String partitionId) {
+        try {
+            api.consumeSingleEvent(consumerId, partitionId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * 9. - Consumes multiple events from the given partition.
      *      Output: The id and contents of each event received in order.
      *      Usage: consume events <consumer> <partition> <number of events>
      */
-    //TODO -------------- saturday finish
+    private static void consumeMultipleEvents(String consumerId, String partitionId, int numOfEvents) {
+        try {
+            api.consumeMultipleEvents(consumerId, partitionId, numOfEvents);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * 10. - Output: Prints a visual display of the given topic, including all
      *       partitions and all of the events currently in each partition.
@@ -354,7 +389,6 @@ public class TributaryCLI {
      *       consumer is receiving events from.
      *       Usage: show consumer group <group>
      */
-    //TODO this is not yet fully implemented,
     private static void showConsumerGroup(String groupId) {
         try {
             api.showConsumerGroup(groupId);
@@ -374,14 +408,35 @@ public class TributaryCLI {
      */
 
     /**
-     * 14. TODO MAX
-     *      Usage: set consumer group rebalancing <group> <rebalancing>
+     * 14. - Sets a new strategy for a given consumer group and rebalances it
+     *       Usage: set consumer group rebalancing <group> <rebalancing>
      */
+    private static void consumerGroupRebalance(String strategy, String groupId) {
+        try {
+            api.setRebalancingStrategy(strategy, groupId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
-     * 15. TODO MAX
+     * 15 - Updates the rebalancing method of consumer group group to
+     *      be one of Range or RoundRobin.
      *      Usage: playback <consumer> <partition> <offset>
      */
+    private static void consumerGroupPlayback(String consumerId, String partitionId, int offset) {
+        try {
+            api.playback(consumerId, partitionId, offset);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     //TODO -------------- sunday finish
 

@@ -1,7 +1,12 @@
 package tributary.core.clients.consumer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import tributary.core.clients.producer.ProducerRecord;
+import tributary.core.common.Partition;
 
 /**
  * The main API for consuming messages of consumer, responsible for managing the
@@ -12,6 +17,8 @@ public class Consumer<K, V> {
     private K groupId;
     private V consumerId;
     private Map<String, Long> partitionToOffset = new HashMap<>();
+    private List<Partition<String, ?>> partitions = new ArrayList<Partition<String, ?>>();
+    private ConsumerRecord<K, V> readRecord;
 
     public Consumer(K groupId, V consumerId) {
         this.groupId = groupId;
@@ -38,13 +45,60 @@ public class Consumer<K, V> {
         this.groupId = groupId;
     }
 
-    // Subscribing to Topics: Consumers subscribe to topics by their names to receive the messages sent to those topics
-
-    public synchronized void commit(String partitionId) {
-        long offset = partitionToOffset.get(partitionId);
-        partitionToOffset.put(partitionId, offset + 1);
+    public void setPartitions(Partition<String, ?> newPartition) {
+        partitions.clear();
+        partitions.add(newPartition);
     }
 
-    // Repositions the consumer's offset for the specified partition to the given offset.
-    // playback <consumer> <partition> <offset>
+    public void clearPartition() {
+        partitions.clear();
+    }
+
+    public void addPartition(Partition<String, ?> newPartition) {
+        partitions.add(newPartition);
+    }
+
+    public List<String> getPartitionIds() {
+        List<String> temp = new ArrayList<>();
+        for (Partition<String, ?> partition : partitions) {
+            temp.add(partition.getPartitionId());
+        }
+
+        return temp;
+    }
+
+    //Assumes partition always exists
+    private Partition<String, ?> getPartition(String partitionId) {
+        for (Partition<String, ?> partition : partitions) {
+            if (partition.getPartitionId().equals(partitionId)) {
+                return partition;
+            }
+        }
+
+        return null;
+    }
+
+    //Pre condition that partition always exists
+    public synchronized void consumeFromPartition(String partitionId, int index) {
+        Partition<String, ?> partition = getPartition(partitionId);
+
+        if (index >= partition.getPartitionSize()) {
+            throw new IllegalArgumentException("All messages available read already in partition");
+        }
+
+        ProducerRecord<K, V> partitionReturn = (ProducerRecord<K, V>) partition.getRecord(index);
+
+        readRecord = new ConsumerRecord<K, V>(partitionReturn.getKey(), partitionReturn.getValue());
+        System.out.println(readRecord);
+    }
+
+    public boolean playback(String partitionId, int offset) {
+        Partition<String, ?> partition = getPartition(partitionId);
+
+        if (partition.getPartitionSize() <= offset) {
+            throw new IllegalArgumentException("Out of Partition Bounds Error :(");
+        }
+
+        return true;
+    }
 }

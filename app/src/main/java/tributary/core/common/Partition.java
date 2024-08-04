@@ -37,6 +37,14 @@ public class Partition<K, V> {
         return partitionId;
     }
 
+    public int getPartitionSize() {
+        return records.size();
+    }
+
+    public synchronized ProducerRecord<K, V> getRecord(int index) {
+        return records.get(index);
+    }
+
     public synchronized void printRecords() {
         int index = 0;
         for (ProducerRecord<K, V> r : records) {

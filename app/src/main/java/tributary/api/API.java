@@ -82,10 +82,33 @@ public interface API {
      */
     public boolean produceEvent(String producerId, String topicId, String event, String partitionId);
 
+    /**
+     * Shows all the consumer in a consumer group. Additionally also shows the allocated
+     * partitions.
+     * @param groupId
+     */
     public void showConsumerGroup(String groupId);
-    //TODO consume event <consumer> <partition>
 
-    //TODO consume events <consumer> <partition> <number of events>
+    /**
+     * Consumes a number of events from the allocated partition. Precondition:
+     * The partition given as an input will always exist
+     *
+     * @param consumerId consumer's identifier
+     * @param partitionId partition identifier
+     * @return true if consumed event, false otherwise
+     */
+    public boolean consumeSingleEvent(String consumerId, String partitionId);
+
+    /**
+     * Consumes a number of events from the allocated partition. Precondition:
+     * The partition given as an input will always exist
+     *
+     * @param consumerId consumer's identifier
+     * @param partitionId partition identifier
+     * @param numOfEvents number of events to consume from the partition
+     * @return true if consumed event, false otherwise
+     */
+    public boolean consumeMultipleEvents(String consumerId, String partitionId, int numOfEvents);
 
     /**
      * Displays information about the specified topic.
@@ -94,17 +117,26 @@ public interface API {
      */
     public void showTopic(String topicId);
 
-    /**
-     * Displays information about the specified consumer group.
-     *
-     * @param groupId the group’s identifier
-     */
-
     //TODO parallel produce (<producer>, <topic>, <event>)
 
     //TODO parallel consume (<consumer>, <partition>
 
-    //TODO set consumer group rebalancing <group> <rebalancing>
+    /**
+     * Sets a new rebalancing strategy for the given consumer group. Automatically
+     * rebalances the rest of the partitions in one go
+     * @param strategy
+     * @param groupId
+     * @return
+     */
+    public boolean setRebalancingStrategy(String strategy, String groupId);
 
-    //TODO playback <consumer> <partition> <offset>
+    /**
+     * Sets the partition of a consumer into a given offset. Checks if offset is
+     * valid. Assumes that the partitionId is always valid
+     * @param consumerId
+     * @param partitionId
+     * @param offset
+     * @return
+     */
+    public boolean playback(String consumerId, String partitionId, int offset);
 }

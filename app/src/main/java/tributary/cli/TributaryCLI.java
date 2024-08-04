@@ -1,5 +1,6 @@
 package tributary.cli;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import tributary.api.API;
@@ -129,6 +130,26 @@ public class TributaryCLI {
                     consumerGroupPlayback(arg[1], arg[2], Integer.parseInt(arg[3]));
                 }
                 break;
+            case "parallel":
+                if ("produce".equals(arg[1])) {
+                    //Create three lists
+                    List<String> producerIds = new ArrayList<>();
+                    List<String> topicId = new ArrayList<>();
+                    List<String> event = new ArrayList<>();
+
+                    int argIndex = 2;
+                    while (argIndex < arg.length) {
+                        producerIds.add(removeLastChar(arg[argIndex].substring(1)));
+                        argIndex++;
+                        topicId.add(removeLastChar(arg[argIndex]));
+                        argIndex++;
+                        event.add(removeLastChar(arg[argIndex]));
+                        argIndex++;
+                    }
+
+                    produceEventsParallel(producerIds, topicId, event);
+                }
+
             default:
                 System.out.println("Unknown command: \"" + command + "\"");
             }
@@ -398,9 +419,18 @@ public class TributaryCLI {
     }
 
     /**
-     * 12. TODO MAX
-     *      Usage: parallel produce (<producer>, <topic>, <event>), ...
+     * 12. - Produces a series of events in parallel. This is purely for
+             demonstrating that your tributary can cope with multiple producers
+             publishing events simultaneously.
+     *       Usage: parallel produce (<producer>, <topic>, <event>), ...
      */
+    private static void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event) {
+        try {
+            api.produceEventsParallel(producerIds, topicId, event);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        }
+    }
 
     /**
      * 13. TODO MAX
@@ -443,6 +473,20 @@ public class TributaryCLI {
     // uml, pair blog
     // Video
     //TODO -------------- Monday finish
+
+    //Helper function from
+    //https://stackoverflow.com/questions/7438612/how-to-remove-the-last-character-from-a-string
+    public static String removeLastChar(String str) {
+        return removeChars(str, 1);
+    }
+
+    public static String removeChars(String str, int numberOfCharactersToRemove) {
+        if (str != null && !str.trim().isEmpty()) {
+            return str.substring(0, str.length() - numberOfCharactersToRemove);
+        }
+        return "";
+    }
+
 }
 
 /*

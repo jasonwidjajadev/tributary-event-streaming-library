@@ -25,7 +25,7 @@ public class Partition<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    public void addRecord(ProducerRecord<String, String> record) {
+    public synchronized void addRecord(ProducerRecord<String, String> record) {
         records.add((ProducerRecord<K, V>) record);
     }
 

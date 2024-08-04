@@ -117,7 +117,15 @@ public interface API {
      */
     public void showTopic(String topicId);
 
-    //TODO parallel produce (<producer>, <topic>, <event>)
+    /**
+     * Produces events in parallel with each other through the use of threading.
+     * Precondition: producerIds, topicIds, and events are ordered correctly
+     * in the correct indicies together in the separate lists
+     * @param producerIds
+     * @param topicId
+     * @param event
+     */
+    public void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event);
 
     //TODO parallel consume (<consumer>, <partition>
 

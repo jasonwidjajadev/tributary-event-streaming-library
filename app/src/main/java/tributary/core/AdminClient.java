@@ -141,7 +141,9 @@ public class AdminClient implements API {
         consumerCoordinator.showConsumerGroup(groupId);
     }
 
-    //TODO parallel produce (<producer>, <topic>, <event>)
+    public void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event) {
+        producerCoordinator.produceEventsParallel(topics, producerIds, topicId, event);
+    }
 
     //TODO parallel consume (<consumer>, <partition>
 

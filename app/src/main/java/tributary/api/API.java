@@ -1,11 +1,14 @@
 package tributary.api;
 
+import tributary.core.clients.producer.Producer;
+import tributary.core.common.Topic;
+
 import java.util.List;
 
 /**
  * A Java API of an event-driven system.
  */
-public interface API {
+public interface API<T, K, V> {
     /**
      * Creates a new topic in the system.
      *
@@ -13,7 +16,7 @@ public interface API {
      * @param type the type of event that goes through the topic. Can be Integer or String.
      * @return true if the topic is created successfully, false otherwise
      */
-    public boolean createTopic(String topicId, String type);
+    public boolean addTopic(String topicId, Topic<T, K, V> topic);
 
     /**
      * Creates a new partition in the specified topic.
@@ -52,14 +55,12 @@ public interface API {
     public List<String> deleteConsumer(String consumerId);
 
     /**
-     * Creates a new producer in the system.
-     *
-     * @param producerId the producer’s identifier
-     * @param type the type of events the producer will produce
-     * @param allocation the allocation method for partition selection (Random or Manual)
-     * @return true if the producer is created successfully, false otherwise
+     * @param producerId
+     * @param producer
+     * @param allocation
+     * @return
      */
-    public boolean createProducer(String producerId, String type, String allocation);
+    public boolean addProducer(String producerId, Producer<T> producer, String allocation);
 
     /**
      * Produces an event to the specified topic.
@@ -81,13 +82,6 @@ public interface API {
      * @return true if the event is produced successfully, false otherwise
      */
     public boolean produceEvent(String producerId, String topicId, String event, String partitionId);
-
-    /**
-     * Shows all the consumer in a consumer group. Additionally also shows the allocated
-     * partitions.
-     * @param groupId
-     */
-    public void showConsumerGroup(String groupId);
 
     /**
      * Consumes a number of events from the allocated partition. Precondition:
@@ -118,6 +112,13 @@ public interface API {
     public void showTopic(String topicId);
 
     /**
+     * Shows all the consumer in a consumer group. Additionally also shows the allocated
+     * partitions.
+     * @param groupId
+     */
+    public void showConsumerGroup(String groupId);
+
+    /**
      * Produces events in parallel with each other through the use of threading.
      * Precondition: producerIds, topicIds, and events are ordered correctly
      * in the correct indicies together in the separate lists
@@ -127,7 +128,14 @@ public interface API {
      */
     public void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event);
 
-    //TODO parallel consume (<consumer>, <partition>
+    /**
+     * Consumes events in parallel for a given consumer and A PARTITION THEY ARE ASSIGNED TO.
+     * Precondition: The consumerId list and partitionId list are same length and same index
+     * correspond to each other. Example: consumer[1] = paritionid[1]
+     * @param consumerId
+     * @param partitionId
+     */
+    public void consumeEventsParallel(List<String> consumerId, List<String> partitionId);
 
     /**
      * Sets a new rebalancing strategy for the given consumer group. Automatically

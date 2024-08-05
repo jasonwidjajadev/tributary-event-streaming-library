@@ -12,40 +12,46 @@ import tributary.core.common.Partition;
  * The main API for consuming messages of consumer, responsible for managing the
  * consumption of messages from topics, including tracking which partition and
  *  offset the consumer is currently consuming from.
+ * @param <K>
+ * @param <V>
  */
 public class Consumer<K, V> {
-    private K groupId;
-    private V consumerId;
+    private String groupId;
+    private String consumerId;
     private Map<String, Long> partitionToOffset = new HashMap<>();
-    private List<Partition<String, ?>> partitions = new ArrayList<Partition<String, ?>>();
+    private List<Partition<K, V>> partitions = new ArrayList<>();
     private ConsumerRecord<K, V> readRecord;
 
-    public Consumer(K groupId, V consumerId) {
+    // =========================================================================
+
+    public Consumer(String groupId, String consumerId) {
         this.groupId = groupId;
-        this.consumerId = consumerId;
-    }
-
-    public synchronized Map<String, Long> getPartitionOffsets() {
-        return partitionToOffset;
-    }
-
-    public void setConsumerId(V consumerId) {
         this.consumerId = consumerId;
     }
 
     public String getConsumerId() {
-        return (String) consumerId;
+        return consumerId;
     }
 
-    public K getGroupId() {
+    public void setConsumerId(String consumerId) {
+        this.consumerId = consumerId;
+    }
+
+    public String getGroupId() {
         return groupId;
     }
 
-    public void setGroupId(K groupId) {
+    public void setGroupId(String groupId) {
         this.groupId = groupId;
     }
 
-    public void setPartitions(Partition<String, ?> newPartition) {
+    // =========================================================================
+    public synchronized Map<String, Long> getPartitionOffsets() {
+        return partitionToOffset;
+    }
+
+    // =========================================================================
+    public void setPartitions(Partition<K, V> newPartition) {
         partitions.clear();
         partitions.add(newPartition);
     }
@@ -54,46 +60,43 @@ public class Consumer<K, V> {
         partitions.clear();
     }
 
-    public void addPartition(Partition<String, ?> newPartition) {
+    public void addPartition(Partition<K, V> newPartition) {
         partitions.add(newPartition);
     }
 
     public List<String> getPartitionIds() {
         List<String> temp = new ArrayList<>();
-        for (Partition<String, ?> partition : partitions) {
+        for (Partition<K, V> partition : partitions) {
             temp.add(partition.getPartitionId());
         }
-
         return temp;
     }
 
     //Assumes partition always exists
-    private Partition<String, ?> getPartition(String partitionId) {
-        for (Partition<String, ?> partition : partitions) {
+    private Partition<K, V> getPartition(String partitionId) {
+        for (Partition<K, V> partition : partitions) {
             if (partition.getPartitionId().equals(partitionId)) {
                 return partition;
             }
         }
-
         return null;
     }
 
     //Pre condition that partition always exists
     public synchronized void consumeFromPartition(String partitionId, int index) {
-        Partition<String, ?> partition = getPartition(partitionId);
+        Partition<K, V> partition = getPartition(partitionId);
 
         if (index >= partition.getPartitionSize()) {
             throw new IllegalArgumentException("All messages available read already in partition");
         }
 
         ProducerRecord<K, V> partitionReturn = (ProducerRecord<K, V>) partition.getRecord(index);
-
         readRecord = new ConsumerRecord<K, V>(partitionReturn.getKey(), partitionReturn.getValue());
         System.out.println(readRecord);
     }
 
     public boolean playback(String partitionId, int offset) {
-        Partition<String, ?> partition = getPartition(partitionId);
+        Partition<K, V> partition = getPartition(partitionId);
 
         if (partition.getPartitionSize() <= offset) {
             throw new IllegalArgumentException("Out of Partition Bounds Error :(");

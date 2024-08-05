@@ -9,23 +9,20 @@ import tributary.core.clients.consumer.internals.RebalancingStrategy;
 import tributary.core.clients.consumer.internals.RoundRobinRebalancing;
 import tributary.core.common.Topic;
 
-public class ConsumerGroup {
+public class ConsumerGroup<T, K, V> {
     private String groupId;
     private String topicId;
     private String rebalancing;
-    private RebalancingStrategy balanceStrategy;
-    private Topic<?> topic;
-    private List<Consumer<?, ?>> consumers = new ArrayList<>();
-
+    private List<Consumer<K, V>> consumers = new ArrayList<>();
+    private Topic<T, K, V> topic;
+    private RebalancingStrategy<T, K, V> balanceStrategy;
     private HashMap<String, Integer> readIndex = new HashMap<String, Integer>();
 
-    public ConsumerGroup(String groupId, String topicId, String rebalancing, Topic<?> topic) {
+    public ConsumerGroup(String groupId, String topicId, String rebalancing, Topic<T, K, V> topic) {
         this.groupId = groupId;
         this.topicId = topicId;
         this.rebalancing = rebalancing;
         this.topic = topic;
-
-        // setRebalancingStrategy(rebalancing, false);
 
         if ("roundrobin".equals(rebalancing)) {
             balanceStrategy = new RoundRobinRebalancing<>();
@@ -40,10 +37,11 @@ public class ConsumerGroup {
         });
     }
 
+    // =========================================================================
     //Note: Balance strategy is always implicitly called since to run it
     //you need a consumer which has to be added. Without the addition
     //of a consumer you have nothing to balance. Therefore it is ok.
-    public void addConsumer(Consumer<?, ?> consumer) {
+    public void addConsumer(Consumer<K, V> consumer) {
         consumers.add(consumer);
         balanceStrategy.distributePartitions(consumers, topic.getPartitions());
     }
@@ -53,9 +51,10 @@ public class ConsumerGroup {
         balanceStrategy.distributePartitions(consumers, topic.getPartitions());
     }
 
+    // =========================================================================
     //Must be synchronized to ensure correctness of hashmap
     public synchronized void singleEventConsume(String consumerId, String partitionId) {
-        for (Consumer<?, ?> cons : consumers) {
+        for (Consumer<K, V> cons : consumers) {
             if (cons.getConsumerId().equals(consumerId)) {
                 cons.consumeFromPartition(partitionId, readIndex.get(partitionId));
 
@@ -66,12 +65,13 @@ public class ConsumerGroup {
         }
     }
 
+    // =========================================================================
     //Assumes partition ID exists
     public int getPartitionReadIndex(String partitionId) {
         return readIndex.get(partitionId);
     }
 
-    public List<Consumer<?, ?>> getConsumers() {
+    public List<Consumer<K, V>> getConsumers() {
         return consumers;
     }
 
@@ -87,6 +87,7 @@ public class ConsumerGroup {
         return rebalancing;
     }
 
+    // =========================================================================
     public void setRebalancingStrategy(String rebalancing, boolean message) {
         if ("roundrobin".equals(rebalancing)) {
             balanceStrategy = new RoundRobinRebalancing<>();
@@ -101,21 +102,20 @@ public class ConsumerGroup {
         balanceStrategy.distributePartitions(consumers, topic.getPartitions());
     }
 
+    // =========================================================================
     public void playback(String consumerId, String partitionId, int offset) {
         //Keep track of offset
         int originalPosition = readIndex.get(partitionId);
         int replayCount = originalPosition - offset;
 
-        for (Consumer<?, ?> cons : consumers) {
+        for (Consumer<K, V> cons : consumers) {
             if (cons.getConsumerId().equals(consumerId)) {
                 if (cons.playback(partitionId, offset)) {
                     readIndex.put(partitionId, offset);
                 }
             }
-
             break;
         }
-
         System.out.println("Currently at position " + offset);
         System.out.println("Replaying back to position " + originalPosition);
         for (int i = 0; i < replayCount; ++i) {

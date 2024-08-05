@@ -265,7 +265,7 @@ if [ $? -eq 0 ]; then
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "parallel consume (consumer_III, A_P3), (consumer_I, A_P1), (consumer_I, A_P1), (consumer_III, A_P3), (consumer_II, A_P2), (consumer_I, A_P1), (consumer_II, A_P2), (consumer_II, A_P2), (consumer_II, A_P2), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_III, A_P3), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_I, A_P0\r"
+        send "parallel consume (consumer_III, A_P3), (consumer_I, A_P1), (consumer_I, A_P1), (consumer_III, A_P3), (consumer_II, A_P2), (consumer_I, A_P1), (consumer_II, A_P2), (consumer_II, A_P2), (consumer_II, A_P2), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_III, A_P3), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_I, A_P0)\r"
         sleep \$one_second
 
         # quit =================================================================

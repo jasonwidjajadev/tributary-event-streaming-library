@@ -1,3 +1,5 @@
+### YOUTUBE LINK https://youtu.be/9iNplsP8I0U
+
 # 5.1.1. Task 1) Preliminary Design (5 marks)
 
 ### Before you begin work you will need to complete a preliminary, high-level design up front. In a blog post, write an engineering specification which includes:
@@ -127,6 +129,8 @@ Write out all the commands you plan to use beforehand, and copy them into the CL
 
 
 ### 5.2.1. Task 3) Final Design (15 marks)
+
+### YOUTUBE LINK https://youtu.be/9iNplsP8I0U
 
 In a second blog post you will need to write in essence a report on your final solution. Your blog post will need to contain:
 

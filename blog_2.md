@@ -1,3 +1,5 @@
+### YOUTUBE LINK https://youtu.be/9iNplsP8I0U
+
 ### 5.2.1. Task 3) Final Design (15 marks)
 
 In a second blog post you will need to write in essence a report on your final solution. Your blog post will need to contain:
@@ -61,3 +63,5 @@ Our key challenges along the way were:
 - Concurrency issues
 - Processing JSON into objects that we can interact with
 - General programming with generics
+
+### YOUTUBE LINK https://youtu.be/9iNplsP8I0U

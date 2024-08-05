@@ -50,6 +50,14 @@ Our solution made extensive use of the strategy pattern. The rebalance strategy 
 The design considerations that we made earlier helped in building an outline for the program. The file structure we outlined ended up being used in the final project. The design patterns were also used in the building of the project
 
 ## Your final UML diagram; and
-
+In our final UML it remains mostly the same. The only difference being that consumers depend on partition and consumerCoordinators depend on topic.
+![](uml_ass3_final.png)
 
 ## A brief reflection on the assignment, including on the challenges you faced and whether you changed your development approach. We will use this blog post and your code to assess the overall design of your solution.
+We feel that our current implementation is fulfills what we set out to build quite well in the beginning. Perhaps one thing we would change is the addition of more testing and also testing to see if how extendable the classes are. 
+
+Our key challenges along the way were:
+- Deciding how to build the tributary system
+- Concurrency issues
+- Processing JSON into objects that we can interact with
+- General programming with generics

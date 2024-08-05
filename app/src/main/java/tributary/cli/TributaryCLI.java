@@ -1,5 +1,6 @@
 package tributary.cli;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import tributary.api.API;
@@ -110,6 +111,54 @@ public class TributaryCLI {
                 } else if (arg.length == 4 && "consumer".equals(arg[1]) && "group".equals(arg[2])) {
                     showConsumerGroup(arg[3]);
                 }
+                break;
+            case "consume":
+                if (arg.length == 4 && "event".equals(arg[1])) {
+                    consumeSingleEvent(arg[2], arg[3]);
+                } else if (arg.length == 5 && "events".equals(arg[1])) {
+                    consumeMultipleEvents(arg[2], arg[3], Integer.parseInt(arg[4]));
+                }
+
+                break;
+            case "set":
+                if (arg.length == 6 && "consumer".equals(arg[1]) && "rebalancing".equals(arg[3])) {
+                    consumerGroupRebalance(arg[5], arg[4]);
+                }
+                break;
+            case "playback":
+                if (arg.length == 4) {
+                    consumerGroupPlayback(arg[1], arg[2], Integer.parseInt(arg[3]));
+                }
+                break;
+            case "parallel":
+                if ("produce".equals(arg[1])) {
+                    //Create three lists
+                    List<String> producerIds = new ArrayList<>();
+                    List<String> topicId = new ArrayList<>();
+                    List<String> event = new ArrayList<>();
+
+                    int argIndex = 2;
+                    while (argIndex < arg.length) {
+                        producerIds.add(removeLastChar(arg[argIndex].substring(1)));
+                        argIndex++;
+                        topicId.add(removeLastChar(arg[argIndex]));
+                        argIndex++;
+                        event.add(removeChars(arg[argIndex], 2));
+                        argIndex++;
+                    }
+
+                    //Last bit has to be dropped because assume no comma
+                    event.remove(event.size() - 1);
+                    event.add(removeLastChar(arg[argIndex - 1]));
+
+                    // Debug code for printing
+                    // for (int i = 0; i < producerIds.size(); ++i) {
+                    //     System.out.printf("%s %s %s", producerIds.get(i), topicId.get(i), event.get(i));
+                    // }
+
+                    produceEventsParallel(producerIds, topicId, event);
+                }
+
                 break;
             default:
                 System.out.println("Unknown command: \"" + command + "\"");
@@ -318,9 +367,6 @@ public class TributaryCLI {
         }
     }
 
-    //Example
-    //TODO -------------- friday finish Max ->> to finish assignement
-
     /**
      * 8. - The given consumer consumes an event from the given partition.
      *      Precondition: The consumer is already allocated to the given partition.
@@ -328,13 +374,33 @@ public class TributaryCLI {
      *      received the event.
      *      Usage: consume event <consumer> <partition>
      */
+    private static void consumeSingleEvent(String consumerId, String partitionId) {
+        try {
+            api.consumeSingleEvent(consumerId, partitionId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * 9. - Consumes multiple events from the given partition.
      *      Output: The id and contents of each event received in order.
      *      Usage: consume events <consumer> <partition> <number of events>
      */
-    //TODO -------------- saturday finish
+    private static void consumeMultipleEvents(String consumerId, String partitionId, int numOfEvents) {
+        try {
+            api.consumeMultipleEvents(consumerId, partitionId, numOfEvents);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * 10. - Output: Prints a visual display of the given topic, including all
      *       partitions and all of the events currently in each partition.
@@ -354,7 +420,6 @@ public class TributaryCLI {
      *       consumer is receiving events from.
      *       Usage: show consumer group <group>
      */
-    //TODO this is not yet fully implemented,
     private static void showConsumerGroup(String groupId) {
         try {
             api.showConsumerGroup(groupId);
@@ -364,9 +429,18 @@ public class TributaryCLI {
     }
 
     /**
-     * 12. TODO MAX
-     *      Usage: parallel produce (<producer>, <topic>, <event>), ...
+     * 12. - Produces a series of events in parallel. This is purely for
+             demonstrating that your tributary can cope with multiple producers
+             publishing events simultaneously.
+     *       Usage: parallel produce (<producer>, <topic>, <event>), ...
      */
+    private static void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event) {
+        try {
+            api.produceEventsParallel(producerIds, topicId, event);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        }
+    }
 
     /**
      * 13. TODO MAX
@@ -374,20 +448,55 @@ public class TributaryCLI {
      */
 
     /**
-     * 14. TODO MAX
-     *      Usage: set consumer group rebalancing <group> <rebalancing>
+     * 14. - Sets a new strategy for a given consumer group and rebalances it
+     *       Usage: set consumer group rebalancing <group> <rebalancing>
      */
+    private static void consumerGroupRebalance(String strategy, String groupId) {
+        try {
+            api.setRebalancingStrategy(strategy, groupId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
-     * 15. TODO MAX
+     * 15 - Updates the rebalancing method of consumer group group to
+     *      be one of Range or RoundRobin.
      *      Usage: playback <consumer> <partition> <offset>
      */
+    private static void consumerGroupPlayback(String consumerId, String partitionId, int offset) {
+        try {
+            api.playback(consumerId, partitionId, offset);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     //TODO -------------- sunday finish
 
     // uml, pair blog
     // Video
     //TODO -------------- Monday finish
+
+    //Helper function from
+    //https://stackoverflow.com/questions/7438612/how-to-remove-the-last-character-from-a-string
+    public static String removeLastChar(String str) {
+        return removeChars(str, 1);
+    }
+
+    public static String removeChars(String str, int numberOfCharactersToRemove) {
+        if (str != null && !str.trim().isEmpty()) {
+            return str.substring(0, str.length() - numberOfCharactersToRemove);
+        }
+        return "";
+    }
+
 }
 
 /*

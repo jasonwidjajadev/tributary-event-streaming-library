@@ -52,6 +52,15 @@ public class Topic<V> {
         return type;
     }
 
+    public List<String> getAllPartitionId() {
+        List<String> partitionIdList = new ArrayList<String>();
+        partitions.forEach(p -> {
+            partitionIdList.add(p.getPartitionId());
+        });
+
+        return partitionIdList;
+    }
+
     public String getTypeName() {
         return type.getClass().getSimpleName().toLowerCase();
     }

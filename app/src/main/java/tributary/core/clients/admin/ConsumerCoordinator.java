@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import tributary.core.clients.consumer.Consumer;
 import tributary.core.clients.consumer.ConsumerGroup;
+import tributary.core.common.Topic;
 
 public class ConsumerCoordinator {
     private static final String RESET = "\u001B[0m";
@@ -21,11 +21,11 @@ public class ConsumerCoordinator {
     // Get the groups consumer is in: String consumerId -> List(GroupsId)
     private Map<String, List<String>> consumerToGroupsMap = new HashMap<>();
 
-    public boolean createConsumerGroup(String groupId, String topicId, String rebalancing) {
+    public boolean createConsumerGroup(String groupId, String topicId, String rebalancing, Topic<?> topic) {
         if (consumerGroups.containsKey(groupId)) {
             throw new IllegalArgumentException("Consumer group already exists, choose another name!");
         }
-        consumerGroups.put(groupId, new ConsumerGroup(groupId, topicId, rebalancing));
+        consumerGroups.put(groupId, new ConsumerGroup(groupId, topicId, rebalancing, topic));
 
         // Create a new hashmap to hold all consumer
         groupToConsumersMap.put(groupId, new HashMap<>());
@@ -111,10 +111,84 @@ public class ConsumerCoordinator {
         System.out.println("-----------------------------------------------");
 
         for (Consumer<?, ?> consumer : consumerGroup.getConsumers()) {
-            for (Entry<String, Long> partitionInfo : consumer.getPartitionOffsets().entrySet()) {
-                System.out.printf(MAGENTA + "+ " + RESET + "%-10s%15d%10d%n", consumer.getConsumerId(),
-                        partitionInfo.getKey(), partitionInfo.getValue());
-            }
+            List<String> partitionId = consumer.getPartitionIds();
+            System.out.println(consumer.getConsumerId());
+            partitionId.forEach(p -> {
+                System.out.printf("%-5s%15s%10s%n", "", p, consumerGroup.getPartitionReadIndex(p));
+            });
         }
+    }
+
+    /**
+     * Consumes one event from a given partitionId
+     * Usage: consume event <consumer> <partition>
+     */
+    public boolean consumeSingleEvent(String consumerId, String partitionId) {
+        List<String> groups = consumerToGroupsMap.get(consumerId);
+        if (groups == null) {
+            throw new IllegalArgumentException("Error: consumer doesn't exist in any group");
+        }
+
+        groups.forEach(g -> {
+            consumerGroups.get(g).singleEventConsume(consumerId, partitionId);
+        });
+
+        return true;
+    }
+
+    /**
+     * Consume single event multiple time
+     * Usage: consume event <consumer> <partition> <n partitions>
+     */
+    public boolean consumeMultipleEvents(String consumerId, String partitionId, int numOfEvents) {
+        for (int i = 0; i < numOfEvents; ++i) {
+            consumeSingleEvent(consumerId, partitionId);
+        }
+
+        return true;
+    }
+
+    /**
+     * Sets the group strategy
+     * Usage: set consumer group rebalancing <group> <rebalancing>
+     */
+    public boolean setGroupRebalancingStrategy(String strategy, String groupId) {
+        ConsumerGroup consumerGroup = consumerGroups.get(groupId);
+
+        consumerGroup.setRebalancingStrategy(strategy.toLowerCase(), true);
+
+        return true;
+    }
+
+    /**
+     * Sets the offset tof a given read position for a given partition in
+     * a consumer. Assumes consumer exists
+     */
+    public boolean playback(String consumerId, String partitionId, int offset) {
+        List<String> groupsWithConsumers = consumerToGroupsMap.get(consumerId);
+
+        groupsWithConsumers.forEach(g -> {
+            consumerGroups.get(g).playback(consumerId, partitionId, offset);
+        });
+
+        return true;
+    }
+
+    public void consumeEventsParallel(List<String> consumerId, List<String> partitionId) {
+        for (int i = 0; i < consumerId.size(); ++i) {
+            consumeEventsThreaded(consumerId.get(i), partitionId.get(i));
+        }
+    }
+
+    public void consumeEventsThreaded(String consumerId, String partitionId) {
+        Thread consumerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                consumeSingleEvent(consumerId, partitionId);
+                return;
+            }
+        });
+
+        consumerThread.run();
     }
 }

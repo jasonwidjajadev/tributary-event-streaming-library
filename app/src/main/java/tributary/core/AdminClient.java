@@ -57,7 +57,8 @@ public class AdminClient implements API {
     // =========================================================================
     @Override
     public boolean createConsumerGroup(String groupId, String topicId, String rebalancing) {
-        return consumerCoordinator.createConsumerGroup(groupId, topicId, rebalancing.toLowerCase());
+        Topic<?> topic = topics.get(topicId);
+        return consumerCoordinator.createConsumerGroup(groupId, topicId, rebalancing.toLowerCase(), topic);
     }
 
     @Override
@@ -114,9 +115,15 @@ public class AdminClient implements API {
 
     // =========================================================================
 
-    //TODO consume event <consumer> <partition>
+    @Override
+    public boolean consumeSingleEvent(String consumerId, String partitionId) {
+        return consumerCoordinator.consumeSingleEvent(consumerId, partitionId);
+    }
 
-    //TODO consume events <consumer> <partition> <number of events>
+    @Override
+    public boolean consumeMultipleEvents(String consumerId, String partitionId, int numOfEvents) {
+        return consumerCoordinator.consumeMultipleEvents(consumerId, partitionId, numOfEvents);
+    }
 
     // =========================================================================
     //TODO not yet fully implemented
@@ -129,18 +136,24 @@ public class AdminClient implements API {
         topic.showTopic();
     }
 
-    //TODO not yet fully implemented
     @Override
     public void showConsumerGroup(String groupId) {
         consumerCoordinator.showConsumerGroup(groupId);
     }
 
-    //TODO parallel produce (<producer>, <topic>, <event>)
+    public void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event) {
+        producerCoordinator.produceEventsParallel(topics, producerIds, topicId, event);
+    }
 
     //TODO parallel consume (<consumer>, <partition>
 
-    //TODO set consumer group rebalancing <group> <rebalancing>
+    @Override
+    public boolean setRebalancingStrategy(String strategy, String groupId) {
+        return consumerCoordinator.setGroupRebalancingStrategy(strategy, groupId);
+    }
 
-    //TODO playback <consumer> <partition> <offset>
-
+    @Override
+    public boolean playback(String consumerId, String partitionId, int offset) {
+        return consumerCoordinator.playback(consumerId, partitionId, offset);
+    }
 }

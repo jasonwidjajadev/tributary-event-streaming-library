@@ -2,6 +2,7 @@ package tributary.core.clients.admin;
 
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -165,6 +166,30 @@ public class ProducerCoordinator {
             e.printStackTrace();
             return false;
         }
+    }
+
+    //Function assumes all lists are of the same size
+    public void produceEventsParallel(
+        Map<String, Topic<?>> topics,
+        List<String> producerIds,
+        List<String> topicId,
+        List<String> event) {
+            for (int i = 0; i < producerIds.size(); ++i) {
+                Topic<?> currTopic = topics.get(topicId.get(i));
+                produceEventThreaded(producerIds.get(i), currTopic, topicId.get(i), event.get(i));
+            }
+    }
+
+    private void produceEventThreaded(String producerId, Topic<?> topic, String topicId, String event) {
+        Thread producerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                produceEvent(producerId, topic, topicId, event);
+                return;
+            }
+        });
+
+        producerThread.run();
     }
 
     private boolean isTypeCompatible(Object type, Object event) {

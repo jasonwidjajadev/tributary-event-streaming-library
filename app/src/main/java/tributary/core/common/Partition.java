@@ -25,7 +25,7 @@ public class Partition<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    public void addRecord(ProducerRecord<String, String> record) {
+    public synchronized void addRecord(ProducerRecord<String, String> record) {
         records.add((ProducerRecord<K, V>) record);
     }
 
@@ -35,6 +35,14 @@ public class Partition<K, V> {
 
     public String getPartitionId() {
         return partitionId;
+    }
+
+    public int getPartitionSize() {
+        return records.size();
+    }
+
+    public synchronized ProducerRecord<K, V> getRecord(int index) {
+        return records.get(index);
     }
 
     public synchronized void printRecords() {

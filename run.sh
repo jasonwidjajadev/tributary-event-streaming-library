@@ -9,7 +9,7 @@ To run: ./run.sh
 END_COMMENT
 
 echo ""
-cd /Users/jasonwidjaja/Desktop/projects/z5494973/comp2511/assignment-iii/ || exit
+cd /Users/ner0/Documents/Git/yeeun_personal/comp_2511/programs/assignment-iii
 
 echo "Compiling TributaryCLI.java ..."
 
@@ -40,7 +40,7 @@ if [ $? -eq 0 ]; then
         set timeout -1
         set one_second 0
         set two_seconds 0
-        set half_second 500
+        set half_second 50
 
         # Start the TributaryCLI program
         spawn java -cp \$env(CLASSPATH) tributary.cli.TributaryCLI
@@ -123,19 +123,37 @@ if [ $? -eq 0 ]; then
         send "create partition topic_B B_P4\r"
         sleep \$one_second
 
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "create partition topic_B B_P5\r"
+        sleep \$one_second
+
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "create partition topic_B B_P6\r"
+        sleep \$one_second
+
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "create partition topic_B B_P7\r"
+        sleep \$one_second
+
         # ======================================================================
         # create consumer group <id> <topic> <rebalancing> =====================
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "create consumer group consumer_group_A topic_A range\r"
+        send "create consumer group consumer_group_A topic_A Range\r"
         sleep \$one_second
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "create consumer group consumer_group_B topic_B round_robin\r"
+        send "create consumer group consumer_group_B topic_B RoundRobin\r"
         sleep \$one_second
 
         # ======================================================================

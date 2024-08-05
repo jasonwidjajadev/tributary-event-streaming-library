@@ -89,7 +89,8 @@ public class Consumer<K, V> {
         ProducerRecord<K, V> partitionReturn = (ProducerRecord<K, V>) partition.getRecord(index);
 
         readRecord = new ConsumerRecord<K, V>(partitionReturn.getKey(), partitionReturn.getValue());
-        System.out.println(readRecord);
+
+        System.out.printf("Consumer:      %s    Consumed:    %s\n", consumerId, readRecord);
     }
 
     public boolean playback(String partitionId, int offset) {

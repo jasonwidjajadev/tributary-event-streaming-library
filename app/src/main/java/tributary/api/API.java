@@ -127,7 +127,14 @@ public interface API {
      */
     public void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event);
 
-    //TODO parallel consume (<consumer>, <partition>
+    /**
+     * Consumes events in parallel for a given consumer and A PARTITION THEY ARE ASSIGNED TO.
+     * Precondition: The consumerId list and partitionId list are same length and same index
+     * correspond to each other. Example: consumer[1] = paritionid[1]
+     * @param consumerId
+     * @param partitionId
+     */
+    public void consumeEventsParallel(List<String> consumerId, List<String> partitionId);
 
     /**
      * Sets a new rebalancing strategy for the given consumer group. Automatically

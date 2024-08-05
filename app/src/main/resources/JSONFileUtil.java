@@ -101,6 +101,25 @@ public class JSONFileUtil {
         return command;
     }
 
+    public static String generateConsumeCommand() {
+        String command = "parallel consume ";
+
+        String[] partitions = {"A_P0", "A_P1", "A_P2", "A_P3"};
+        String[] consumers = {"consumer_I", "consumer_I", "consumer_II", "consumer_III"};
+
+        for (int i = 0; i < 50; ++i) {
+            int rand = (int) (Math.random() * 4);
+
+            String commandAppend = String.format("(%s, %s), ", consumers[rand], partitions[rand]);
+
+            command += commandAppend;
+        }
+
+        command = removeChars(command, 2);
+
+        return command;
+    }
+
     public static void main(String[] args) {
         System.out.println("JSON File Creator Active");
 
@@ -117,6 +136,6 @@ public class JSONFileUtil {
         //     createStringIndex(i, directory, "xParallelism_String");
         // }
 
-        System.out.println(generateCommand());
+        System.out.println(generateConsumeCommand());
     }
 }

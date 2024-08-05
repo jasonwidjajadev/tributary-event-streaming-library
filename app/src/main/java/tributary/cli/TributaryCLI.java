@@ -157,6 +157,28 @@ public class TributaryCLI {
                     // }
 
                     produceEventsParallel(producerIds, topicId, event);
+
+                } else if ("consume".equals(arg[1])) {
+                    List<String> consumerId = new ArrayList<>();
+                    List<String> partitionId = new ArrayList<>();
+
+                    int argIndex = 2;
+                    while (argIndex < arg.length) {
+                        consumerId.add(removeLastChar(arg[argIndex].substring(1)));
+                        argIndex++;
+                        partitionId.add(removeChars(arg[argIndex], 2));
+                        argIndex++;
+                    }
+
+                    partitionId.remove(partitionId.size() - 1);
+                    partitionId.add(removeLastChar(arg[argIndex - 1]));
+
+                    // Debug code for printing
+                    // for (int i = 0; i < partitionId.size(); ++i) {
+                    //     System.out.printf("%s %s ", consumerId.get(i), partitionId.get(i));
+                    // }
+
+                    consumeEventsParallel(consumerId, partitionId);
                 }
 
                 break;
@@ -406,7 +428,6 @@ public class TributaryCLI {
      *       partitions and all of the events currently in each partition.
      *       Usage: show topic <topic>
      */
-    //TODO this is not yet fully implemented, please create format like a table
     private static void showTopic(String topicId) {
         try {
             api.showTopic(topicId);
@@ -443,9 +464,21 @@ public class TributaryCLI {
     }
 
     /**
-     * 13. TODO MAX
-     *      Usage: parallel consume (<consumer>, <partition>)
+     * 13. - Consumes a series of events in parallel. This is purely for
+             demonstrating that your tributary can cope with multiple consumers
+             receiving events simultaneously.
+     *       Usage: parallel consume (<consumer>, <partition>), ...
      */
+    private static void consumeEventsParallel(List<String> consumerId, List<String> partitionId) {
+        try {
+            api.consumeEventsParallel(consumerId, partitionId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * 14. - Sets a new strategy for a given consumer group and rebalances it

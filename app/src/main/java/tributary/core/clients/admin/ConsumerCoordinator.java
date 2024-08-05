@@ -180,7 +180,7 @@ public class ConsumerCoordinator {
         }
     }
 
-    public void consumeEventsThreaded(String consumerId, String partitionId) {
+    private void consumeEventsThreaded(String consumerId, String partitionId) {
         Thread consumerThread = new Thread(new Runnable() {
             @Override
             public void run() {

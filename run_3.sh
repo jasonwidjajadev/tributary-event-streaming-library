@@ -216,7 +216,6 @@ if [ $? -eq 0 ]; then
         send "parallel produce (producer_1, topic_A, xParallelism_Integer_32.json), (producer_2, topic_A, xParallelism_Integer_33.json), (producer_1, topic_A, xParallelism_Integer_34.json), (producer_2, topic_A, xParallelism_Integer_35.json), (producer_1, topic_A, xParallelism_Integer_36.json), (producer_2, topic_A, xParallelism_Integer_37.json), (producer_1, topic_A, xParallelism_Integer_38.json), (producer_2, topic_A, xParallelism_Integer_39.json), (producer_1, topic_A, xParallelism_Integer_40.json), (producer_2, topic_A, xParallelism_Integer_41.json), (producer_1, topic_A, xParallelism_Integer_42.json), (producer_2, topic_A, xParallelism_Integer_43.json), (producer_1, topic_A, xParallelism_Integer_44.json), (producer_2, topic_A, xParallelism_Integer_45.json), (producer_1, topic_A, xParallelism_Integer_46.json), (producer_2, topic_A, xParallelism_Integer_47.json), (producer_1, topic_A, xParallelism_Integer_48.json), (producer_2, topic_A, xParallelism_Integer_49.json)\r"
         sleep \$one_second
 
-
         # ======================================================================
 
         expect "Enter a command:"
@@ -228,13 +227,45 @@ if [ $? -eq 0 ]; then
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "show topic topic_A\r"
+        send "show consumer group consumer_group_A\r"
+        sleep \$one_second
+
+        # ======================================================================
+        
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "consume event consumer_I A_P0\r"
         sleep \$one_second
 
         expect "Enter a command:"
         sleep \$two_seconds
         after \$half_second
-        send "show consumer group consumer_group_A\r"
+        send "consume event consumer_I A_P1\r"
+        sleep \$one_second
+
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "consume event consumer_II A_P2\r"
+        sleep \$one_second
+
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "consume event consumer_III A_P3\r"
+        sleep \$one_second
+
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "parallel consume (consumer_I, A_P0), (consumer_III, A_P3), (consumer_II, A_P2), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_I, A_P0), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_I, A_P1), (consumer_I, A_P1), (consumer_I, A_P1), (consumer_III, A_P3), (consumer_III, A_P3), (consumer_III, A_P3), (consumer_I, A_P0), (consumer_III, A_P3), (consumer_II, A_P2), (consumer_I, A_P0), (consumer_I, A_P0), (consumer_III, A_P3), (consumer_III, A_P3), (consumer_II, A_P2), (consumer_I, A_P0), (consumer_I, A_P1), (consumer_II, A_P2), (consumer_II, A_P2), (consumer_III, A_P3), (consumer_I, A_P0), (consumer_II, A_P2)\r"
+        sleep \$one_second
+         
+        expect "Enter a command:"
+        sleep \$two_seconds
+        after \$half_second
+        send "parallel consume (consumer_III, A_P3), (consumer_I, A_P1), (consumer_I, A_P1), (consumer_III, A_P3), (consumer_II, A_P2), (consumer_I, A_P1), (consumer_II, A_P2), (consumer_II, A_P2), (consumer_II, A_P2), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_III, A_P3), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_I, A_P1), (consumer_I, A_P0), (consumer_I, A_P0\r"
         sleep \$one_second
 
         # quit =================================================================

@@ -141,11 +141,15 @@ public class AdminClient implements API {
         consumerCoordinator.showConsumerGroup(groupId);
     }
 
+    @Override
     public void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event) {
         producerCoordinator.produceEventsParallel(topics, producerIds, topicId, event);
     }
 
-    //TODO parallel consume (<consumer>, <partition>
+    @Override
+    public void consumeEventsParallel(List<String> consumerId, List<String> partitionId) {
+        consumerCoordinator.consumeEventsParallel(consumerId, partitionId);
+    }
 
     @Override
     public boolean setRebalancingStrategy(String strategy, String groupId) {

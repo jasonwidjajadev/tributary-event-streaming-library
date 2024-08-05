@@ -2,6 +2,7 @@ package tributary.core.clients.admin;
 
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -13,8 +14,8 @@ import tributary.core.common.Partition;
 import tributary.core.common.Topic;
 
 public class ProducerCoordinator<T, K, V> {
-    private static final String RESET = "\u001B[0m";
-    private static final String MAGENTA = "\033[0;35m";
+    // private static final String RESET = "\u001B[0m";
+    // private static final String MAGENTA = "\033[0;35m";
     private static final int DELAY = 0;
     private Map<String, Producer<T>> producers = new HashMap<>();
 
@@ -26,6 +27,7 @@ public class ProducerCoordinator<T, K, V> {
         return true;
     }
 
+    // =========================================================================
     /**
      * 7. - Produces a new event from the given producer to the given topic.
      *    - How you represent the event is up to you. We recommend using a JSON
@@ -159,4 +161,27 @@ public class ProducerCoordinator<T, K, V> {
             return false;
         }
     }
+
+    // =========================================================================
+    //Function assumes all lists are of the same size
+    public void produceEventsParallel(Map<String, Topic<T, K, V>> topics, List<String> producerIds,
+            List<String> topicId, List<String> event) {
+        for (int i = 0; i < producerIds.size(); ++i) {
+            Topic<T, K, V> currTopic = topics.get(topicId.get(i));
+            produceEventThreaded(producerIds.get(i), currTopic, topicId.get(i), event.get(i));
+        }
+    }
+
+    private void produceEventThreaded(String producerId, Topic<T, K, V> topic, String topicId, String event) {
+        Thread producerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                produceEvent(producerId, topic, topicId, event);
+                return;
+            }
+        });
+
+        producerThread.run();
+    }
+
 }

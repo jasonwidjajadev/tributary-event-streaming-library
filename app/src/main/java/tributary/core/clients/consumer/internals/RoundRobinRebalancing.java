@@ -6,13 +6,21 @@ import java.util.List;
 
 public class RoundRobinRebalancing<T, K, V> implements RebalancingStrategy<T, K, V> {
     @Override
-    public void assignPartitions(List<Consumer<K, V>> consumers, List<Partition<K, V>> partitions) {
-        int numConsumers = consumers.size();
-        int consumerIndex = 0;
+    public void distributePartitions(List<Consumer<K, V>> consumerList, List<Partition<K, V>> partitions) {
+
+        //Clear all partition first before moving forward
+        for (Consumer<K, V> cons : consumerList) {
+            cons.clearPartition();
+        }
+
+        int numConsumers = consumerList.size();
+
+        int index = 0;
         for (Partition<K, V> partition : partitions) {
-            Consumer<K, V> assignedConsumer = consumers.get(consumerIndex);
-            assignedConsumer.assignPartition(partition);
-            consumerIndex = (consumerIndex + 1) % numConsumers;
+            Consumer<K, V> assignedConsumer = consumerList.get(index);
+            assignedConsumer.addPartition(partition);
+
+            index = (index + 1) % numConsumers;
         }
     }
 }

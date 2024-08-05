@@ -12,7 +12,6 @@ public class Topic<T, K, V> {
     private static final String MAGENTA = "\033[0;35m";
     private static final int DELAY = 0;
     private String id;
-    // private T type;
     private Class<T> type;
     private List<Partition<K, V>> partitions;
 
@@ -42,6 +41,15 @@ public class Topic<T, K, V> {
 
     public Class<T> getType() {
         return type;
+    }
+
+    public List<String> getAllPartitionId() {
+        List<String> partitionIdList = new ArrayList<String>();
+        partitions.forEach(p -> {
+            partitionIdList.add(p.getPartitionId());
+        });
+
+        return partitionIdList;
     }
 
     public String getTypeName() {

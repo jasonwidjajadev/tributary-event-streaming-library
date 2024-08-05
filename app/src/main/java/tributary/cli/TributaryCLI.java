@@ -1,5 +1,6 @@
 package tributary.cli;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import tributary.api.API;
@@ -12,23 +13,23 @@ public class TributaryCLI<T, K, V> {
     private int counter = 0;
     private static final int DELAY = 0;
     private static final String RESET = "\u001B[0m";
-    private static final String BLACK = "\033[0;30m";
-    private static final String RED = "\033[0;31m";
+    // private static final String BLACK = "\033[0;30m";
+    // private static final String RED = "\033[0;31m";
     private static final String GREEN = "\033[0;32m";
-    private static final String YELLOW = "\033[0;33m";
-    private static final String BLUE = "\033[0;34m";
+    // private static final String YELLOW = "\033[0;33m";
+    // private static final String BLUE = "\033[0;34m";
     private static final String MAGENTA = "\033[0;35m";
-    private static final String CYAN = "\033[0;36m";
-    private static final String WHITE = "\033[0;37m";
-    // Bold Colors
-    private static final String BOLD_BLACK = "\033[1;30m";
+    // private static final String CYAN = "\033[0;36m";
+    // private static final String WHITE = "\033[0;37m";
+
+    // private static final String BOLD_BLACK = "\033[1;30m";
     private static final String BOLD_RED = "\033[1;31m";
-    private static final String BOLD_GREEN = "\033[1;32m";
-    private static final String BOLD_YELLOW = "\033[1;33m";
-    private static final String BOLD_BLUE = "\033[1;34m";
-    private static final String BOLD_MAGENTA = "\033[1;35m";
-    private static final String BOLD_CYAN = "\033[1;36m";
-    private static final String BOLD_WHITE = "\033[1;37m";
+    // private static final String BOLD_GREEN = "\033[1;32m";
+    // private static final String BOLD_YELLOW = "\033[1;33m";
+    // private static final String BOLD_BLUE = "\033[1;34m";
+    // private static final String BOLD_MAGENTA = "\033[1;35m";
+    // private static final String BOLD_CYAN = "\033[1;36m";
+    // private static final String BOLD_WHITE = "\033[1;37m";
 
     public static void main(String[] args) {
         TributaryCLI<String, String, String> cli = new TributaryCLI<>();
@@ -98,19 +99,6 @@ public class TributaryCLI<T, K, V> {
                     produceEvent(arg[2], arg[3], arg[4], arg[5]);
                 }
                 break;
-            case "consume":
-                if (arg.length == 4 && "event".equals(arg[1])) {
-                    consumeEvent(arg[2], arg[3]);
-                } else if ("events".equals(arg[1])) {
-                    String consumerId = arg[2];
-                    String partitionId = arg[3];
-                    String[] eventIds = new String[arg.length - 4];
-                    for (int i = 4; i < arg.length; i++) {
-                        eventIds[i - 4] = (arg[i]);
-                    }
-                    consumeEvents(consumerId, partitionId, eventIds);
-                }
-                break;
             case "show":
                 if (arg.length == 3 && "topic".equals(arg[1])) {
                     showTopic(arg[2]);
@@ -118,31 +106,75 @@ public class TributaryCLI<T, K, V> {
                     showConsumerGroup(arg[3]);
                 }
                 break;
-            case "parallel":
-                if ("produce".equals(arg[1])) {
-                    String[] events = new String[(arg.length - 3)];
-                    for (int i = 3; i < arg.length; i++) {
-                        events[i - 3] = arg[i];
-                    }
-                    parallelProduce(events);
-                } else if ("consume".equals(arg[1])) {
-                    String[] partitions = new String[(arg.length - 3)];
-                    for (int i = 3; i < arg.length; i++) {
-                        partitions[i - 3] = arg[i];
-                    }
-                    parallelConsume(partitions);
+            case "consume":
+                if (arg.length == 4 && "event".equals(arg[1])) {
+                    consumeSingleEvent(arg[2], arg[3]);
+                } else if (arg.length == 5 && "events".equals(arg[1])) {
+                    consumeMultipleEvents(arg[2], arg[3], Integer.parseInt(arg[4]));
                 }
+
                 break;
             case "set":
-                if (arg.length == 6 && "consumer".equals(arg[1]) && "group".equals(arg[2])
-                        && "rebalancing".equals(arg[3])) {
-                    setConsumerGroupRebalancing(arg[4], arg[5]);
+                if (arg.length == 6 && "consumer".equals(arg[1]) && "rebalancing".equals(arg[3])) {
+                    consumerGroupRebalance(arg[5], arg[4]);
                 }
                 break;
             case "playback":
                 if (arg.length == 4) {
-                    playback(arg[1], arg[2], arg[3]);
+                    consumerGroupPlayback(arg[1], arg[2], Integer.parseInt(arg[3]));
                 }
+                break;
+            case "parallel":
+                if ("produce".equals(arg[1])) {
+                    //Create three lists
+                    List<String> producerIds = new ArrayList<>();
+                    List<String> topicId = new ArrayList<>();
+                    List<String> event = new ArrayList<>();
+
+                    int argIndex = 2;
+                    while (argIndex < arg.length) {
+                        producerIds.add(removeLastChar(arg[argIndex].substring(1)));
+                        argIndex++;
+                        topicId.add(removeLastChar(arg[argIndex]));
+                        argIndex++;
+                        event.add(removeChars(arg[argIndex], 2));
+                        argIndex++;
+                    }
+
+                    //Last bit has to be dropped because assume no comma
+                    event.remove(event.size() - 1);
+                    event.add(removeLastChar(arg[argIndex - 1]));
+
+                    // Debug code for printing
+                    // for (int i = 0; i < producerIds.size(); ++i) {
+                    //     System.out.printf("%s %s %s", producerIds.get(i), topicId.get(i), event.get(i));
+                    // }
+
+                    produceEventsParallel(producerIds, topicId, event);
+
+                } else if ("consume".equals(arg[1])) {
+                    List<String> consumerId = new ArrayList<>();
+                    List<String> partitionId = new ArrayList<>();
+
+                    int argIndex = 2;
+                    while (argIndex < arg.length) {
+                        consumerId.add(removeLastChar(arg[argIndex].substring(1)));
+                        argIndex++;
+                        partitionId.add(removeChars(arg[argIndex], 2));
+                        argIndex++;
+                    }
+
+                    partitionId.remove(partitionId.size() - 1);
+                    partitionId.add(removeLastChar(arg[argIndex - 1]));
+
+                    // Debug code for printing
+                    for (int i = 0; i < partitionId.size(); ++i) {
+                        System.out.printf("%s %s ", consumerId.get(i), partitionId.get(i));
+                    }
+
+                    consumeEventsParallel(consumerId, partitionId);
+                }
+
                 break;
             default:
                 System.out.println("Unknown command: \"" + command + "\"");
@@ -340,9 +372,6 @@ public class TributaryCLI<T, K, V> {
         }
     }
 
-    // if a message has no key, its default partition is round robin allocation
-    // messsage with the same key always go in the same parttiion in order
-
     /**
      * 7. - Produces a new event from the given producer to the given topic.
      *    - How you represent the event is up to you. We recommend using a JSON
@@ -384,9 +413,15 @@ public class TributaryCLI<T, K, V> {
      *      received the event.
      *      Usage: consume event <consumer> <partition>
      */
-    private void consumeEvent(String consumer, String partition) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'consumeEvent'");
+    private void consumeSingleEvent(String consumerId, String partitionId) {
+        try {
+            api.consumeSingleEvent(consumerId, partitionId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -394,10 +429,14 @@ public class TributaryCLI<T, K, V> {
      *      Output: The id and contents of each event received in order.
      *      Usage: consume events <consumer> <partition> <number of events>
      */
-    public void consumeEvents(String consumer, String partition, String[] eventIds) {
-        // TODO Auto-generated method stub
-        for (String eventId : eventIds) {
-            throw new UnsupportedOperationException("Unimplemented method 'consumeEvent'");
+    private void consumeMultipleEvents(String consumerId, String partitionId, int numOfEvents) {
+        try {
+            api.consumeMultipleEvents(consumerId, partitionId, numOfEvents);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -419,7 +458,6 @@ public class TributaryCLI<T, K, V> {
      *       consumer is receiving events from.
      *       Usage: show consumer group <group>
      */
-    //TODO this is not yet fully implemented,
     private void showConsumerGroup(String groupId) {
         try {
             api.showConsumerGroup(groupId);
@@ -429,162 +467,77 @@ public class TributaryCLI<T, K, V> {
     }
 
     /**
-     * 12. TODO MAX
+     * 12. - Produces a series of events in parallel. This is purely for
+     *      demonstrating that your tributary can cope with multiple producers
+     *      publishing events simultaneously.
      *      Usage: parallel produce (<producer>, <topic>, <event>), ...
      */
-    private void parallelProduce(String[] events) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'parallelProduce'");
+    private void produceEventsParallel(List<String> producerIds, List<String> topicId, List<String> event) {
+        try {
+            api.produceEventsParallel(producerIds, topicId, event);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        }
     }
 
     /**
-     * 13. TODO MAX
-     *      Usage: parallel consume (<consumer>, <partition>)
+     * 13. - Consumes a series of events in parallel. This is purely for
+     *      demonstrating that your tributary can cope with multiple consumers
+     *      receiving events simultaneously.
+     *      Usage: parallel consume (<consumer>, <partition>), ...
      */
-    private void parallelConsume(String[] partitions) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'parallelConsume'");
+    private void consumeEventsParallel(List<String> consumerId, List<String> partitionId) {
+        try {
+            api.consumeEventsParallel(consumerId, partitionId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
-     * 14. TODO MAX
-     *      Usage: set consumer group rebalancing <group> <rebalancing>
+     * 14. - Sets a new strategy for a given consumer group and rebalances it
+     *       Usage: set consumer group rebalancing <group> <rebalancing>
      */
-    private void setConsumerGroupRebalancing(String group, String rebalancing) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setConsumerGroupRebalancing'");
+    private void consumerGroupRebalance(String strategy, String groupId) {
+        try {
+            api.setRebalancingStrategy(strategy, groupId);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
-     * 15. TODO MAX
+     * 15 - Updates the rebalancing method of consumer group group to
+     *      be one of Range or RoundRobin.
      *      Usage: playback <consumer> <partition> <offset>
      */
-    private void playback(String consumer, String partition, String offset) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'playback'");
+    private void consumerGroupPlayback(String consumerId, String partitionId, int offset) {
+        try {
+            api.playback(consumerId, partitionId, offset);
+            Thread.sleep(DELAY);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //Helper function from
+    //https://stackoverflow.com/questions/7438612/how-to-remove-the-last-character-from-a-string
+    public static String removeLastChar(String str) {
+        return removeChars(str, 1);
+    }
+
+    public static String removeChars(String str, int numberOfCharactersToRemove) {
+        if (str != null && !str.trim().isEmpty()) {
+            return str.substring(0, str.length() - numberOfCharactersToRemove);
+        }
+        return "";
     }
 }
-
-/*
-//** create topic <id> <type>
-// create topic weather_update Integer
-// create topic e_commerce_order String
-create topic topic_A Integer
-create topic topic_B String
-
-//** create partition <topic> <id>
-// create partition weather_update 0
-// create partition weather_update 1
-// create partition weather_update 2
-
-// create partition e_commerce_order 0
-// create partition e_commerce_order 1
-// create partition e_commerce_order 2
-
-create partition topic_A A_P0
-create partition topic_A A_P1
-create partition topic_A A_P2
-create partition topic_A A_P3
-create partition topic_A A_P4
-
-create partition topic_B B_P0
-create partition topic_B B_P1
-create partition topic_B B_P2
-create partition topic_B B_P3
-create partition topic_B B_P4
-create partition topic_B B_P5
-create partition topic_B B_P6
-
-//** create consumer group <id> <topic> <rebalancing>
-// create consumer group weather_group weather_update range
-// create consumer group e_commerce_group e_commerce_order round_robin
-
-create consumer group consumer_group_A topic_A range
-create consumer group consumer_group_B topic_B round_robin
-
-//** create consumer <group> <id>
-// create consumer weather_group consumer_1_real_time_alert
-// create consumer weather_group consumer_2_ai_weather_predictions
-// create consumer weather_group consumer_3_stores_weather_data
-
-// create consumer e_commerce_group consumer_1_order_validation
-// create consumer e_commerce_group consumer_2_order_fullfillment
-// create consumer e_commerce_group consumer_3_order_shipping_service
-// create consumer e_commerce_group consumer_4_order_review
-
-create consumer consumer_group_A consumer_I
-create consumer consumer_group_A consumer_II
-create consumer consumer_group_A consumer_III
-
-create consumer consumer_group_B consumer_I
-create consumer consumer_group_B consumer_II
-create consumer consumer_group_B consumer_III
-create consumer consumer_group_B consumer_IV
-create consumer consumer_group_B consumer_V
-
-//** delete consumer <consumer>
-// delete consumer consumer_4
-delete consumer consumer_V
-
-//** create producer <id> <type> <allocation>
-create producer producer_1 Integer manual
-create producer producer_2 String random
-
-//** produce event <producer> <topic> <event> <partition>
-
-// produce event producer_1 weather_update /weather/key_sydney_value_sydney1.json partition_0
-// produce event producer_1 weather_update /weather/key_sydney_value_paris1.json partition_1
-// produce event producer_1 weather_update /weather/key_sydney_value_tokyo1.json partition_2
-
-// produce event producer_1 e_commerce_order /e_commerce/key_order_fulfillment_order_1.json partition_0
-// produce event producer_1 e_commerce_order /e_commerce/key_order_shipping_order_1.json partition_1
-// produce event producer_1 e_commerce_order /e_commerce/key_order_validation_order_1.json partition_2
-
-create topic topic_A Integer
-create partition topic_A A_P0
-create producer producer_1 Integer manual
-
-
-produce event producer_1 topic_A integer_key_0_event_0.json A_P0
-produce event producer_1 topic_A integer_key_1_event_1.json A_P1
-produce event producer_1 topic_A integer_key_2_event_2.json A_P2
-produce event producer_1 topic_A integer_key_3_event_3.json A_P3
-produce event producer_1 topic_A integer_key_4_event_4.json A_P4
-
-produce event producer_1 topic_A integer_key_1_event_1.json A_P0
-produce event producer_1 topic_A integer_key_2_event_2.json A_P0
-produce event producer_1 topic_A integer_key_3_event_3.json A_P0
-produce event producer_1 topic_A integer_key_4_event_4.json A_P0
-
-create topic topic_B String
-create partition topic_B B_P0
-create producer producer_2 String random
-
-
-produce event producer_2 topic_B string_key_0_event_0.json
-produce event producer_2 topic_B string_key_1_event_1.json
-produce event producer_2 topic_B string_key_2_event_2.json
-produce event producer_2 topic_B string_key_3_event_3.json
-produce event producer_2 topic_B string_key_4_event_4.json
-produce event producer_2 topic_B string_key_5_event_5.json
-produce event producer_2 topic_B string_key_6_event_6.json
-
-//** consume event <consumer> <partition>
-
-//** consume events <consumer> <partition> <number of events>
-
-//** show topic <topic>
-show topic topic_A
-show topic topic_B
-
-//** show consumer group <group>
-
-//** parallel produce (<producer>, <topic>, <event>), ...
-
-//** parallel consume (<consumer>, <partition>)
-
-//** set consumer group rebalancing <group> <rebalancing>
-
-//** playback <consumer> <partition> <offset>
-
-*/

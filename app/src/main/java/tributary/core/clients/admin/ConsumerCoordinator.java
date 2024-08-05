@@ -8,19 +8,14 @@ import java.util.Map;
 
 import tributary.core.clients.consumer.Consumer;
 import tributary.core.clients.consumer.ConsumerGroup;
-import tributary.core.clients.consumer.internals.RangeRebalancing;
-import tributary.core.clients.consumer.internals.RebalancingStrategy;
-import tributary.core.clients.consumer.internals.RoundRobinRebalancing;
-import tributary.core.common.Partition;
 import tributary.core.common.Topic;
 
 public class ConsumerCoordinator<T, K, V> {
     // private static final String RESET = "\u001B[0m";
     // private static final String MAGENTA = "\033[0;35m";
-    private RebalancingStrategy<T, K, V> strategy;
 
     // Get the consumer group: String groupId -> Class consumerGroup
-    private Map<String, ConsumerGroup<K, V>> consumerGroups = new HashMap<>();
+    private Map<String, ConsumerGroup<T, K, V>> consumerGroups = new HashMap<>();
 
     // Get the consumer class: String groupId -> Class consumer
     private Map<String, Map<String, Consumer<K, V>>> groupToConsumersMap = new HashMap<>();
@@ -28,17 +23,18 @@ public class ConsumerCoordinator<T, K, V> {
     // Get the groups consumer is in: String consumerId -> List(GroupsId)
     private Map<String, List<String>> consumerToGroupsMap = new HashMap<>();
 
-    public boolean createConsumerGroup(String groupId, String topicId, String rebalancing) {
+    public boolean createConsumerGroup(String groupId, String topicId, String rebalancing, Topic<T, K, V> topic) {
         if (consumerGroups.containsKey(groupId)) {
             throw new IllegalArgumentException("Consumer group already exists, choose another name!");
         }
-        consumerGroups.put(groupId, new ConsumerGroup<>(groupId, topicId, rebalancing));
+        consumerGroups.put(groupId, new ConsumerGroup<>(groupId, topicId, rebalancing, topic));
 
         // Create a new hashmap to hold all consumer
         groupToConsumersMap.put(groupId, new HashMap<>());
         return true;
     }
 
+    // =========================================================================
     /**
      * Creates a new consumer with the given group and ID.
      *
@@ -47,20 +43,10 @@ public class ConsumerCoordinator<T, K, V> {
      * @return true if the consumer is created successfully
      * @throws IllegalArgumentException if the consumer ID already exists in the group
      */
-    public boolean createConsumer(String groupId, String consumerId, Map<String, Topic<T, K, V>> topics) {
-        ConsumerGroup<K, V> consumerGroup = consumerGroups.get(groupId);
+    public boolean createConsumer(String groupId, String consumerId) {
+        ConsumerGroup<T, K, V> consumerGroup = consumerGroups.get(groupId);
         if (consumerGroup == null) {
             throw new IllegalArgumentException("Error: consumer group doesn't exist!");
-        }
-
-        Topic<T, K, V> topic = topics.get(consumerGroup.getTopicId());
-        if (topic == null) {
-            throw new IllegalArgumentException("Error: topic does not exist!");
-        }
-
-        int numPartitions = topic.getPartitions().size();
-        if (consumerGroup.getNumConsumers() >= numPartitions) {
-            throw new IllegalArgumentException("Error: the number of consumers exceeds the number of partitions");
         }
 
         Map<String, Consumer<K, V>> consumers = groupToConsumersMap.get(groupId);
@@ -72,9 +58,6 @@ public class ConsumerCoordinator<T, K, V> {
         consumers.put(consumerId, consumer);
         consumerGroup.addConsumer(consumer);
 
-        //when a consumer gets added, it should automatically gets rebalanced
-        partitionConsumer(consumerGroup, consumerId, topics);
-
         // Track the groups for this consumer
         List<String> groups = consumerToGroupsMap.get(consumerId);
         if (groups == null) {
@@ -85,25 +68,7 @@ public class ConsumerCoordinator<T, K, V> {
         return true;
     }
 
-    private void partitionConsumer(ConsumerGroup<K, V> consumerGroup, String consumerId,
-            Map<String, Topic<T, K, V>> topics) {
-        String topicId = consumerGroup.getTopicId();
-        Topic<T, K, V> topic = topics.get(topicId);
-        if (topic == null) {
-            throw new IllegalArgumentException("Error: topic does not exist!");
-        }
-        List<Partition<K, V>> partitions = topic.getPartitions();
-        List<Consumer<K, V>> consumers = consumerGroup.getConsumers();
-        if (consumerGroup.getRebalancing().equals("range")) {
-            strategy = new RangeRebalancing<>();
-        } else if (consumerGroup.getRebalancing().equals("round_robin")) {
-            strategy = new RoundRobinRebalancing<>();
-        } else {
-            throw new IllegalArgumentException("Error: unknown rebalancing strategy");
-        }
-        strategy.assignPartitions(consumers, partitions);
-    }
-
+    // =========================================================================
     /**
      * Deletes the consumer with the given id from all groups.
      *
@@ -115,9 +80,10 @@ public class ConsumerCoordinator<T, K, V> {
         if (groups == null) {
             throw new IllegalArgumentException("Error: consumer doesn't exist in any group");
         }
+
         List<String> deletedGroups = new ArrayList<>(groups);
         for (String groupId : groups) {
-            ConsumerGroup<K, V> consumerGroup = consumerGroups.get(groupId);
+            ConsumerGroup<T, K, V> consumerGroup = consumerGroups.get(groupId);
             if (consumerGroup != null) {
                 Map<String, Consumer<K, V>> consumers = groupToConsumersMap.get(groupId);
                 if (consumers != null) {
@@ -131,29 +97,106 @@ public class ConsumerCoordinator<T, K, V> {
         return deletedGroups;
     }
 
+    // =========================================================================
     /**
      * Shows all consumers in the consumer group, and which partitions each
      * consumer is receiving events from.
      * Usage: show consumer group <group>
      */
     public void showConsumerGroup(String groupId) {
-        // ConsumerGroup consumerGroup = consumerGroups.get(groupId);
-        // if (consumerGroup == null) {
-        //     throw new IllegalArgumentException("Error: consumer group doesn't exist, nothing to show!");
-        // }
+        ConsumerGroup<T, K, V> consumerGroup = consumerGroups.get(groupId);
+        if (consumerGroup == null) {
+            throw new IllegalArgumentException("Error: consumer group doesn't exist, nothing to show!");
+        }
 
-        // System.out.println("");
-        // System.out.println("Consumer group: " + groupId);
-        // System.out.println("");
-        // System.out.printf("%-10s%15s%10s%n", "Consumers", "Partition", "Offset");
-        // System.out.println("-----------------------------------------------");
+        System.out.println("");
+        System.out.println("Consumer group: " + groupId);
+        System.out.println("");
+        System.out.printf("%-10s%15s%10s%n", "Consumers", "Partition", "Offset");
+        System.out.println("-----------------------------------------------");
 
-        // for (Consumer<?, ?> consumer : consumerGroup.getConsumers()) {
-        //     for (Entry<String, Long> partitionInfo : consumer.getPartitionOffsets().entrySet()) {
-        //         System.out.printf(MAGENTA + "+ " + RESET + "%-10s%15d%10d%n", consumer.getConsumerId(),
-        //                 partitionInfo.getKey(), partitionInfo.getValue());
-        //     }
-        // }
+        for (Consumer<K, V> consumer : consumerGroup.getConsumers()) {
+            List<String> partitionId = consumer.getPartitionIds();
+            System.out.println(consumer.getConsumerId());
+            partitionId.forEach(p -> {
+                System.out.printf("%-5s%15s%10s%n", "", p, consumerGroup.getPartitionReadIndex(p));
+            });
+        }
     }
 
+    // =========================================================================
+    /**
+     * Consumes one event from a given partitionId
+     * Usage: consume event <consumer> <partition>
+     */
+    public boolean consumeSingleEvent(String consumerId, String partitionId) {
+        List<String> groups = consumerToGroupsMap.get(consumerId);
+        if (groups == null) {
+            throw new IllegalArgumentException("Error: consumer doesn't exist in any group");
+        }
+        groups.forEach(g -> {
+            consumerGroups.get(g).singleEventConsume(consumerId, partitionId);
+        });
+        return true;
+    }
+
+    /**
+     * Consume single event multiple time
+     * Usage: consume event <consumer> <partition> <n partitions>
+     */
+    public boolean consumeMultipleEvents(String consumerId, String partitionId, int numOfEvents) {
+        for (int i = 0; i < numOfEvents; ++i) {
+            consumeSingleEvent(consumerId, partitionId);
+        }
+        return true;
+    }
+
+    // =========================================================================
+    /**
+     * Sets the group strategy
+     * Usage: set consumer group rebalancing <group> <rebalancing>
+     */
+    public boolean setGroupRebalancingStrategy(String strategy, String groupId) {
+        ConsumerGroup<T, K, V> consumerGroup = consumerGroups.get(groupId);
+        consumerGroup.setRebalancingStrategy(strategy.toLowerCase(), true);
+        return true;
+    }
+
+    /**
+     * Sets the offset tof a given read position for a given partition in
+     * a consumer. Assumes consumer exists
+     */
+    public boolean playback(String consumerId, String partitionId, int offset) {
+        List<String> groupsWithConsumers = consumerToGroupsMap.get(consumerId);
+
+        groupsWithConsumers.forEach(g -> {
+            consumerGroups.get(g).playback(consumerId, partitionId, offset);
+        });
+        return true;
+    }
+
+    /**
+     * @param consumerId
+     * @param partitionId
+     */
+    public void consumeEventsParallel(List<String> consumerId, List<String> partitionId) {
+        for (int i = 0; i < consumerId.size(); ++i) {
+            consumeEventsThreaded(consumerId.get(i), partitionId.get(i));
+        }
+    }
+
+    /**
+     * @param consumerId
+     * @param partitionId
+     */
+    private void consumeEventsThreaded(String consumerId, String partitionId) {
+        Thread consumerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                consumeSingleEvent(consumerId, partitionId);
+                return;
+            }
+        });
+        consumerThread.run();
+    }
 }

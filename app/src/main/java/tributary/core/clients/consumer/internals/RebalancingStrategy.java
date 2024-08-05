@@ -5,5 +5,5 @@ import tributary.core.common.Partition;
 import java.util.List;
 
 public interface RebalancingStrategy<T, K, V> {
-    void assignPartitions(List<Consumer<K, V>> consumers, List<Partition<K, V>> partitions);
+    void distributePartitions(List<Consumer<K, V>> consumerList, List<Partition<K, V>> partitions);
 }

@@ -53,7 +53,7 @@ public class ConsumerGroup<T, K, V> {
 
     // =========================================================================
     //Must be synchronized to ensure correctness of hashmap
-    public synchronized void singleEventConsume(String consumerId, String partitionId) {
+    public void singleEventConsume(String consumerId, String partitionId) {
         for (Consumer<K, V> cons : consumers) {
             if (cons.getConsumerId().equals(consumerId)) {
                 //Important as two consumers can have same name but not same partition

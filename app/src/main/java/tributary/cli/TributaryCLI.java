@@ -168,9 +168,9 @@ public class TributaryCLI<T, K, V> {
                     partitionId.add(removeLastChar(arg[argIndex - 1]));
 
                     // Debug code for printing
-                    for (int i = 0; i < partitionId.size(); ++i) {
-                        System.out.printf("%s %s ", consumerId.get(i), partitionId.get(i));
-                    }
+                    // for (int i = 0; i < partitionId.size(); ++i) {
+                    //     System.out.printf("%s %s ", consumerId.get(i), partitionId.get(i));
+                    // }
 
                     consumeEventsParallel(consumerId, partitionId);
                 }
@@ -482,9 +482,9 @@ public class TributaryCLI<T, K, V> {
 
     /**
      * 13. - Consumes a series of events in parallel. This is purely for
-     *      demonstrating that your tributary can cope with multiple consumers
-     *      receiving events simultaneously.
-     *      Usage: parallel consume (<consumer>, <partition>), ...
+             demonstrating that your tributary can cope with multiple consumers
+             receiving events simultaneously.
+     *       Usage: parallel consume (<consumer>, <partition>), ...
      */
     private void consumeEventsParallel(List<String> consumerId, List<String> partitionId) {
         try {

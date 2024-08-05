@@ -56,6 +56,11 @@ public class ConsumerGroup<T, K, V> {
     public synchronized void singleEventConsume(String consumerId, String partitionId) {
         for (Consumer<K, V> cons : consumers) {
             if (cons.getConsumerId().equals(consumerId)) {
+                //Important as two consumers can have same name but not same partition
+                if (readIndex.get(partitionId) == null) {
+                    break;
+                }
+
                 cons.consumeFromPartition(partitionId, readIndex.get(partitionId));
 
                 int currIndex = readIndex.get(partitionId);

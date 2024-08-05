@@ -1,11 +1,14 @@
 package tributary.api;
 
+import tributary.core.clients.producer.Producer;
+import tributary.core.common.Topic;
+
 import java.util.List;
 
 /**
  * A Java API of an event-driven system.
  */
-public interface API {
+public interface API<T, K, V> {
     /**
      * Creates a new topic in the system.
      *
@@ -13,7 +16,7 @@ public interface API {
      * @param type the type of event that goes through the topic. Can be Integer or String.
      * @return true if the topic is created successfully, false otherwise
      */
-    public boolean createTopic(String topicId, String type);
+    public boolean addTopic(String topicId, Topic<T, K, V> topic);
 
     /**
      * Creates a new partition in the specified topic.
@@ -52,14 +55,12 @@ public interface API {
     public List<String> deleteConsumer(String consumerId);
 
     /**
-     * Creates a new producer in the system.
-     *
-     * @param producerId the producer’s identifier
-     * @param type the type of events the producer will produce
-     * @param allocation the allocation method for partition selection (Random or Manual)
-     * @return true if the producer is created successfully, false otherwise
+     * @param producerId
+     * @param producer
+     * @param allocation
+     * @return
      */
-    public boolean createProducer(String producerId, String type, String allocation);
+    public boolean addProducer(String producerId, Producer<T> producer, String allocation);
 
     /**
      * Produces an event to the specified topic.
@@ -82,7 +83,11 @@ public interface API {
      */
     public boolean produceEvent(String producerId, String topicId, String event, String partitionId);
 
+    /**
+     * @param groupId
+     */
     public void showConsumerGroup(String groupId);
+
     //TODO consume event <consumer> <partition>
 
     //TODO consume events <consumer> <partition> <number of events>

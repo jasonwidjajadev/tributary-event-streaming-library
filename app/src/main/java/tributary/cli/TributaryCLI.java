@@ -4,12 +4,13 @@ import java.util.List;
 import java.util.Scanner;
 import tributary.api.API;
 import tributary.api.APIFactory;
+import tributary.core.clients.producer.Producer;
+import tributary.core.common.Topic;
 
-public class TributaryCLI {
-    private static API api = APIFactory.createAdminClient();
+public class TributaryCLI<T, K, V> {
+    private API<T, K, V> api = APIFactory.createAdminClient();
+    private int counter = 0;
     private static final int DELAY = 0;
-    // private static final int DELAY = 3000;
-
     private static final String RESET = "\u001B[0m";
     private static final String BLACK = "\033[0;30m";
     private static final String RED = "\033[0;31m";
@@ -19,7 +20,6 @@ public class TributaryCLI {
     private static final String MAGENTA = "\033[0;35m";
     private static final String CYAN = "\033[0;36m";
     private static final String WHITE = "\033[0;37m";
-
     // Bold Colors
     private static final String BOLD_BLACK = "\033[1;30m";
     private static final String BOLD_RED = "\033[1;31m";
@@ -30,18 +30,12 @@ public class TributaryCLI {
     private static final String BOLD_CYAN = "\033[1;36m";
     private static final String BOLD_WHITE = "\033[1;37m";
 
-    // Background Colors
-    private static final String BACKGROUND_BLACK = "\033[40m";
-    private static final String BACKGROUND_RED = "\033[41m";
-    private static final String BACKGROUND_GREEN = "\033[42m";
-    private static final String BACKGROUND_YELLOW = "\033[43m";
-    private static final String BACKGROUND_BLUE = "\033[44m";
-    private static final String BACKGROUND_MAGENTA = "\033[45m";
-    private static final String BACKGROUND_CYAN = "\033[46m";
-    private static final String BACKGROUND_WHITE = "\033[47m";
-
     public static void main(String[] args) {
+        TributaryCLI<String, String, String> cli = new TributaryCLI<>();
+        cli.run();
+    }
 
+    private void run() {
         System.out.println("");
         System.out.println("=======================================================");
         System.out.println("       ______     _ __          __                   ");
@@ -73,7 +67,7 @@ public class TributaryCLI {
         System.out.println("======== ⚡ Thank you for using Tributary! ⚡ =========");
     }
 
-    private static void processCommand(String command) {
+    private void processCommand(String command) {
         String[] arg = command.split(" ");
         if (arg.length > 0) {
             switch (arg[0]) {
@@ -104,6 +98,19 @@ public class TributaryCLI {
                     produceEvent(arg[2], arg[3], arg[4], arg[5]);
                 }
                 break;
+            case "consume":
+                if (arg.length == 4 && "event".equals(arg[1])) {
+                    consumeEvent(arg[2], arg[3]);
+                } else if ("events".equals(arg[1])) {
+                    String consumerId = arg[2];
+                    String partitionId = arg[3];
+                    String[] eventIds = new String[arg.length - 4];
+                    for (int i = 4; i < arg.length; i++) {
+                        eventIds[i - 4] = (arg[i]);
+                    }
+                    consumeEvents(consumerId, partitionId, eventIds);
+                }
+                break;
             case "show":
                 if (arg.length == 3 && "topic".equals(arg[1])) {
                     showTopic(arg[2]);
@@ -111,10 +118,45 @@ public class TributaryCLI {
                     showConsumerGroup(arg[3]);
                 }
                 break;
+            case "parallel":
+                if ("produce".equals(arg[1])) {
+                    String[] events = new String[(arg.length - 3)];
+                    for (int i = 3; i < arg.length; i++) {
+                        events[i - 3] = arg[i];
+                    }
+                    parallelProduce(events);
+                } else if ("consume".equals(arg[1])) {
+                    String[] partitions = new String[(arg.length - 3)];
+                    for (int i = 3; i < arg.length; i++) {
+                        partitions[i - 3] = arg[i];
+                    }
+                    parallelConsume(partitions);
+                }
+                break;
+            case "set":
+                if (arg.length == 6 && "consumer".equals(arg[1]) && "group".equals(arg[2])
+                        && "rebalancing".equals(arg[3])) {
+                    setConsumerGroupRebalancing(arg[4], arg[5]);
+                }
+                break;
+            case "playback":
+                if (arg.length == 4) {
+                    playback(arg[1], arg[2], arg[3]);
+                }
+                break;
             default:
                 System.out.println("Unknown command: \"" + command + "\"");
             }
         }
+
+    }
+
+    public void incrementCounter() {
+        ++this.counter;
+    }
+
+    public int getCounter() {
+        return counter;
     }
 
     /**
@@ -130,23 +172,31 @@ public class TributaryCLI {
      *      Usage: create topic <id> <type>
      *      # partitions = 6 ?
      */
-    private static void createTopic(String topidId, String type) {
+
+    @SuppressWarnings("unchecked")
+    private void createTopic(String topicId, String type) {
         try {
-            if (api.createTopic(topidId, type)) {
-                System.out.println(MAGENTA + "+ " + RESET + "Topic created with id:     " + topidId);
+            Class<T> classType;
+            switch (type.toLowerCase()) {
+            case "string" -> classType = (Class<T>) String.class;
+            case "integer" -> classType = (Class<T>) Integer.class;
+            default -> throw new IllegalArgumentException("Unsupported type: " + type);
+            }
+            Topic<T, K, V> topic = new Topic<>(topicId, classType);
+            if (topic != null && api.addTopic(topicId, topic)) {
+                System.out.println(MAGENTA + "+ " + RESET + "Topic created with id:     " + topicId);
                 Thread.sleep(DELAY);
                 System.out.println(MAGENTA + "+ " + RESET + "Topic type:                " + type);
                 System.out.println("");
                 Thread.sleep(DELAY);
             } else {
-                System.err.println("Failed to create topic: \"" + topidId + "\"");
+                System.err.println("Failed to create topic: \"" + topicId + "\" or Topic ID is duplicate");
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
     }
 
     /**
@@ -156,7 +206,7 @@ public class TributaryCLI {
      *      Output: A message confirming the partition’s creation.
      *      Usage: create partition <topic> <id>
      */
-    private static void createPartition(String topicId, String partitionId) {
+    private void createPartition(String topicId, String partitionId) {
         try {
             if (api.createPartition(topicId, partitionId)) {
                 System.out.println(MAGENTA + "+ " + RESET + "Partition created with id  " + partitionId);
@@ -183,7 +233,7 @@ public class TributaryCLI {
      *      Output: A message confirming the consumer group’s creation.
      *      Usage: create consumer group <id> <topic> <rebalancing>
      */
-    private static void createConsumerGroup(String groupId, String topicId, String rebalancing) {
+    private void createConsumerGroup(String groupId, String topicId, String rebalancing) {
         try {
             if (api.createConsumerGroup(groupId, topicId, rebalancing)) {
                 System.out.println(MAGENTA + "+ " + RESET + "Consumer group created:    " + groupId);
@@ -209,7 +259,7 @@ public class TributaryCLI {
      *      Output: A message confirming the consumer’s creation.
      *      Usage: create consumer <group> <id>
      */
-    private static void createConsumer(String groupId, String consumerId) {
+    private void createConsumer(String groupId, String consumerId) {
         try {
             if (api.createConsumer(groupId, consumerId)) {
                 System.out.println(MAGENTA + "+ " + RESET + "Consumer created with id:  " + consumerId);
@@ -234,7 +284,7 @@ public class TributaryCLI {
      *      the rebalanced consumer group that the consumer was previously in.
      *      Usage: delete consumer <consumer>
      */
-    private static void deleteConsumer(String consumerId) {
+    private void deleteConsumer(String consumerId) {
         try {
             List<String> groupsId = api.deleteConsumer(consumerId);
             if (groupsId != null) {
@@ -262,9 +312,18 @@ public class TributaryCLI {
      *      Output: A message confirming the producer’s creation.
      *      Usage: create producer <id> <type> <allocation>
      */
-    private static void createProducer(String producerId, String type, String allocation) {
+    @SuppressWarnings("unchecked")
+    private void createProducer(String producerId, String type, String allocation) {
         try {
-            if (api.createProducer(producerId, type, allocation)) {
+            Class<T> classType;
+            switch (type.toLowerCase()) {
+            case "string" -> classType = (Class<T>) String.class;
+            case "integer" -> classType = (Class<T>) Integer.class;
+            default -> throw new IllegalArgumentException("Unsupported type: " + type);
+            }
+
+            Producer<T> producer = new Producer<>(producerId, classType, allocation);
+            if (producer != null && api.addProducer(producerId, producer, allocation)) {
                 System.out.println(MAGENTA + "+ " + RESET + "Producer created, id:      " + producerId);
                 Thread.sleep(DELAY);
                 System.out.println(MAGENTA + "+ " + RESET + "Producer type:             " + type);
@@ -296,7 +355,7 @@ public class TributaryCLI {
      *      Output: The event id, the id of the partition it is currently in.
      *      Usage: produce event <producer> <topic> <event>
      */
-    private static void produceEvent(String producerId, String topicId, String event) {
+    private void produceEvent(String producerId, String topicId, String event) {
         try {
             api.produceEvent(producerId, topicId, event);
             Thread.sleep(DELAY);
@@ -307,7 +366,7 @@ public class TributaryCLI {
         }
     }
 
-    private static void produceEvent(String producerId, String topicId, String event, String partitionId) {
+    private void produceEvent(String producerId, String topicId, String event, String partitionId) {
         try {
             api.produceEvent(producerId, topicId, event, partitionId);
             Thread.sleep(DELAY);
@@ -318,9 +377,6 @@ public class TributaryCLI {
         }
     }
 
-    //Example
-    //TODO -------------- friday finish Max ->> to finish assignement
-
     /**
      * 8. - The given consumer consumes an event from the given partition.
      *      Precondition: The consumer is already allocated to the given partition.
@@ -328,20 +384,29 @@ public class TributaryCLI {
      *      received the event.
      *      Usage: consume event <consumer> <partition>
      */
+    private void consumeEvent(String consumer, String partition) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'consumeEvent'");
+    }
 
     /**
      * 9. - Consumes multiple events from the given partition.
      *      Output: The id and contents of each event received in order.
      *      Usage: consume events <consumer> <partition> <number of events>
      */
-    //TODO -------------- saturday finish
+    public void consumeEvents(String consumer, String partition, String[] eventIds) {
+        // TODO Auto-generated method stub
+        for (String eventId : eventIds) {
+            throw new UnsupportedOperationException("Unimplemented method 'consumeEvent'");
+        }
+    }
+
     /**
      * 10. - Output: Prints a visual display of the given topic, including all
      *       partitions and all of the events currently in each partition.
      *       Usage: show topic <topic>
      */
-    //TODO this is not yet fully implemented, please create format like a table
-    private static void showTopic(String topicId) {
+    private void showTopic(String topicId) {
         try {
             api.showTopic(topicId);
         } catch (IllegalArgumentException e) {
@@ -355,7 +420,7 @@ public class TributaryCLI {
      *       Usage: show consumer group <group>
      */
     //TODO this is not yet fully implemented,
-    private static void showConsumerGroup(String groupId) {
+    private void showConsumerGroup(String groupId) {
         try {
             api.showConsumerGroup(groupId);
         } catch (IllegalArgumentException e) {
@@ -367,34 +432,40 @@ public class TributaryCLI {
      * 12. TODO MAX
      *      Usage: parallel produce (<producer>, <topic>, <event>), ...
      */
+    private void parallelProduce(String[] events) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'parallelProduce'");
+    }
 
     /**
      * 13. TODO MAX
      *      Usage: parallel consume (<consumer>, <partition>)
      */
+    private void parallelConsume(String[] partitions) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'parallelConsume'");
+    }
 
     /**
      * 14. TODO MAX
      *      Usage: set consumer group rebalancing <group> <rebalancing>
      */
+    private void setConsumerGroupRebalancing(String group, String rebalancing) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setConsumerGroupRebalancing'");
+    }
 
     /**
      * 15. TODO MAX
      *      Usage: playback <consumer> <partition> <offset>
      */
-
-    //TODO -------------- sunday finish
-
-    // uml, pair blog
-    // Video
-    //TODO -------------- Monday finish
+    private void playback(String consumer, String partition, String offset) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'playback'");
+    }
 }
 
 /*
-
-
-
-
 //** create topic <id> <type>
 // create topic weather_update Integer
 // create topic e_commerce_order String

@@ -5,19 +5,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import tributary.core.clients.consumer.Consumer;
 import tributary.core.clients.consumer.ConsumerGroup;
+import tributary.core.clients.consumer.internals.RangeRebalancing;
+import tributary.core.clients.consumer.internals.RebalancingStrategy;
+import tributary.core.clients.consumer.internals.RoundRobinRebalancing;
+import tributary.core.common.Partition;
+import tributary.core.common.Topic;
 
-public class ConsumerCoordinator {
-    private static final String RESET = "\u001B[0m";
-    private static final String MAGENTA = "\033[0;35m";
+public class ConsumerCoordinator<T, K, V> {
+    // private static final String RESET = "\u001B[0m";
+    // private static final String MAGENTA = "\033[0;35m";
+    private RebalancingStrategy<T, K, V> strategy;
 
     // Get the consumer group: String groupId -> Class consumerGroup
-    private Map<String, ConsumerGroup> consumerGroups = new HashMap<>();
+    private Map<String, ConsumerGroup<K, V>> consumerGroups = new HashMap<>();
+
     // Get the consumer class: String groupId -> Class consumer
-    private Map<String, Map<String, Consumer<?, ?>>> groupToConsumersMap = new HashMap<>();
+    private Map<String, Map<String, Consumer<K, V>>> groupToConsumersMap = new HashMap<>();
+
     // Get the groups consumer is in: String consumerId -> List(GroupsId)
     private Map<String, List<String>> consumerToGroupsMap = new HashMap<>();
 
@@ -25,7 +32,7 @@ public class ConsumerCoordinator {
         if (consumerGroups.containsKey(groupId)) {
             throw new IllegalArgumentException("Consumer group already exists, choose another name!");
         }
-        consumerGroups.put(groupId, new ConsumerGroup(groupId, topicId, rebalancing));
+        consumerGroups.put(groupId, new ConsumerGroup<>(groupId, topicId, rebalancing));
 
         // Create a new hashmap to hold all consumer
         groupToConsumersMap.put(groupId, new HashMap<>());
@@ -40,20 +47,33 @@ public class ConsumerCoordinator {
      * @return true if the consumer is created successfully
      * @throws IllegalArgumentException if the consumer ID already exists in the group
      */
-    public boolean createConsumer(String groupId, String consumerId) {
-        ConsumerGroup consumerGroup = consumerGroups.get(groupId);
+    public boolean createConsumer(String groupId, String consumerId, Map<String, Topic<T, K, V>> topics) {
+        ConsumerGroup<K, V> consumerGroup = consumerGroups.get(groupId);
         if (consumerGroup == null) {
             throw new IllegalArgumentException("Error: consumer group doesn't exist!");
         }
 
-        Map<String, Consumer<?, ?>> consumers = groupToConsumersMap.get(groupId);
+        Topic<T, K, V> topic = topics.get(consumerGroup.getTopicId());
+        if (topic == null) {
+            throw new IllegalArgumentException("Error: topic does not exist!");
+        }
+
+        int numPartitions = topic.getPartitions().size();
+        if (consumerGroup.getNumConsumers() >= numPartitions) {
+            throw new IllegalArgumentException("Error: the number of consumers exceeds the number of partitions");
+        }
+
+        Map<String, Consumer<K, V>> consumers = groupToConsumersMap.get(groupId);
         if (consumers.containsKey(consumerId)) {
             throw new IllegalArgumentException("Error: choose another name, consumerId already exists in this group!");
         }
 
-        Consumer<String, String> consumer = new Consumer<>(groupId, consumerId);
+        Consumer<K, V> consumer = new Consumer<>(groupId, consumerId);
         consumers.put(consumerId, consumer);
         consumerGroup.addConsumer(consumer);
+
+        //when a consumer gets added, it should automatically gets rebalanced
+        partitionConsumer(consumerGroup, consumerId, topics);
 
         // Track the groups for this consumer
         List<String> groups = consumerToGroupsMap.get(consumerId);
@@ -63,6 +83,25 @@ public class ConsumerCoordinator {
         }
         groups.add(groupId);
         return true;
+    }
+
+    private void partitionConsumer(ConsumerGroup<K, V> consumerGroup, String consumerId,
+            Map<String, Topic<T, K, V>> topics) {
+        String topicId = consumerGroup.getTopicId();
+        Topic<T, K, V> topic = topics.get(topicId);
+        if (topic == null) {
+            throw new IllegalArgumentException("Error: topic does not exist!");
+        }
+        List<Partition<K, V>> partitions = topic.getPartitions();
+        List<Consumer<K, V>> consumers = consumerGroup.getConsumers();
+        if (consumerGroup.getRebalancing().equals("range")) {
+            strategy = new RangeRebalancing<>();
+        } else if (consumerGroup.getRebalancing().equals("round_robin")) {
+            strategy = new RoundRobinRebalancing<>();
+        } else {
+            throw new IllegalArgumentException("Error: unknown rebalancing strategy");
+        }
+        strategy.assignPartitions(consumers, partitions);
     }
 
     /**
@@ -76,12 +115,11 @@ public class ConsumerCoordinator {
         if (groups == null) {
             throw new IllegalArgumentException("Error: consumer doesn't exist in any group");
         }
-
         List<String> deletedGroups = new ArrayList<>(groups);
         for (String groupId : groups) {
-            ConsumerGroup consumerGroup = consumerGroups.get(groupId);
+            ConsumerGroup<K, V> consumerGroup = consumerGroups.get(groupId);
             if (consumerGroup != null) {
-                Map<String, Consumer<?, ?>> consumers = groupToConsumersMap.get(groupId);
+                Map<String, Consumer<K, V>> consumers = groupToConsumersMap.get(groupId);
                 if (consumers != null) {
                     consumers.remove(consumerId);
                 }
@@ -99,22 +137,23 @@ public class ConsumerCoordinator {
      * Usage: show consumer group <group>
      */
     public void showConsumerGroup(String groupId) {
-        ConsumerGroup consumerGroup = consumerGroups.get(groupId);
-        if (consumerGroup == null) {
-            throw new IllegalArgumentException("Error: consumer group doesn't exist, nothing to show!");
-        }
+        // ConsumerGroup consumerGroup = consumerGroups.get(groupId);
+        // if (consumerGroup == null) {
+        //     throw new IllegalArgumentException("Error: consumer group doesn't exist, nothing to show!");
+        // }
 
-        System.out.println("");
-        System.out.println("Consumer group: " + groupId);
-        System.out.println("");
-        System.out.printf("%-10s%15s%10s%n", "Consumers", "Partition", "Offset");
-        System.out.println("-----------------------------------------------");
+        // System.out.println("");
+        // System.out.println("Consumer group: " + groupId);
+        // System.out.println("");
+        // System.out.printf("%-10s%15s%10s%n", "Consumers", "Partition", "Offset");
+        // System.out.println("-----------------------------------------------");
 
-        for (Consumer<?, ?> consumer : consumerGroup.getConsumers()) {
-            for (Entry<String, Long> partitionInfo : consumer.getPartitionOffsets().entrySet()) {
-                System.out.printf(MAGENTA + "+ " + RESET + "%-10s%15d%10d%n", consumer.getConsumerId(),
-                        partitionInfo.getKey(), partitionInfo.getValue());
-            }
-        }
+        // for (Consumer<?, ?> consumer : consumerGroup.getConsumers()) {
+        //     for (Entry<String, Long> partitionInfo : consumer.getPartitionOffsets().entrySet()) {
+        //         System.out.printf(MAGENTA + "+ " + RESET + "%-10s%15d%10d%n", consumer.getConsumerId(),
+        //                 partitionInfo.getKey(), partitionInfo.getValue());
+        //     }
+        // }
     }
+
 }

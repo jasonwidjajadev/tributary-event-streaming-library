@@ -3,47 +3,31 @@ package tributary.core;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import tributary.api.API;
 import tributary.core.clients.admin.Broker;
 import tributary.core.clients.admin.ConsumerCoordinator;
 import tributary.core.clients.admin.ProducerCoordinator;
+import tributary.core.clients.producer.Producer;
 import tributary.core.common.Topic;
 
-public class AdminClient implements API {
+public class AdminClient<T, K, V> implements API<T, K, V> {
     private int counter = 0;
-    private Map<String, Topic<?>> topics = new HashMap<>();
-
     private Broker broker = new Broker();
-    private ProducerCoordinator producerCoordinator = new ProducerCoordinator();
-    private ConsumerCoordinator consumerCoordinator = new ConsumerCoordinator();
+    private Map<String, Topic<T, K, V>> topics = new HashMap<>();
+    private ProducerCoordinator<T, K, V> producerCoordinator = new ProducerCoordinator<>();
+    private ConsumerCoordinator<T, K, V> consumerCoordinator = new ConsumerCoordinator<>();
 
-    public boolean createTopic(String topicId, String type) {
-        if (topics.containsKey(topicId)) {
-            throw new IllegalArgumentException("Error: ID already exists!");
+    @Override
+    public boolean addTopic(String topicId, Topic<T, K, V> topic) {
+        if (topics.get(topicId) != null) {
+            throw new IllegalArgumentException("Error: choose another name, topicId already exist!");
         }
-        if (type.equalsIgnoreCase("string")) {
-            topics.put(topicId, new Topic<String>(topicId, "String"));
-        } else if (type.equalsIgnoreCase("integer")) {
-            topics.put(topicId, new Topic<Integer>(topicId, counter));
-        } else {
-            throw new IllegalArgumentException(
-                    "Unrecognized type: " + type + ". Allowed types are 'String' and 'Integer'.");
-        }
-        incrementCounter();
+        this.topics.put(topicId, topic);
         return true;
     }
 
-    public int getCounter() {
-        return counter;
-    }
-
-    public void incrementCounter() {
-        this.counter++;
-    }
-
     public boolean createPartition(String topicId, String partitionId) {
-        Topic<?> topic = topics.get(topicId);
+        Topic<T, K, V> topic = topics.get(topicId);
         if (topic == null) {
             throw new IllegalArgumentException("Error: TopicId not found!");
         }
@@ -54,7 +38,7 @@ public class AdminClient implements API {
         }
     }
 
-    // =========================================================================
+    // // =========================================================================
     @Override
     public boolean createConsumerGroup(String groupId, String topicId, String rebalancing) {
         return consumerCoordinator.createConsumerGroup(groupId, topicId, rebalancing.toLowerCase());
@@ -62,7 +46,7 @@ public class AdminClient implements API {
 
     @Override
     public boolean createConsumer(String groupId, String consumerId) {
-        return consumerCoordinator.createConsumer(groupId, consumerId);
+        return consumerCoordinator.createConsumer(groupId, consumerId, topics);
     }
 
     @Override
@@ -71,32 +55,15 @@ public class AdminClient implements API {
     }
 
     // =========================================================================
-    private Object createInstance(String type) {
-        switch (type.toLowerCase()) {
-        case "string":
-            return "String" + counter;
-        case "integer":
-            return counter;
-        default:
-            throw new IllegalArgumentException(
-                    "Unrecognized type: " + type + ". Allowed types are 'String' and 'Integer'.");
-        }
-    }
 
     @Override
-    public boolean createProducer(String producerId, String type, String allocation) {
-        Object instance;
-        try {
-            instance = createInstance(type);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error: Unable to create instance of class " + type, e);
-        }
-        return producerCoordinator.createProducer(producerId, instance, allocation.toLowerCase());
+    public boolean addProducer(String producerId, Producer<T> producer, String allocation) {
+        return producerCoordinator.addProducer(producerId, producer, allocation.toLowerCase());
     }
 
     @Override
     public boolean produceEvent(String producerId, String topicId, String event) {
-        Topic<?> topic = topics.get(topicId);
+        Topic<T, K, V> topic = topics.get(topicId);
         if (topic == null) {
             throw new IllegalArgumentException("Error: TopicId not found!");
         }
@@ -105,42 +72,42 @@ public class AdminClient implements API {
 
     @Override
     public boolean produceEvent(String producerId, String topicId, String event, String partitionId) {
-        Topic<?> topic = topics.get(topicId);
+        Topic<T, K, V> topic = topics.get(topicId);
         if (topic == null) {
             throw new IllegalArgumentException("Error: TopicId not found!");
         }
         return producerCoordinator.produceEvent(producerId, topic, topicId, event, partitionId);
     }
 
-    // =========================================================================
+    // // =========================================================================
 
-    //TODO consume event <consumer> <partition>
+    // //TODO consume event <consumer> <partition>
 
-    //TODO consume events <consumer> <partition> <number of events>
+    // //TODO consume events <consumer> <partition> <number of events>
 
-    // =========================================================================
-    //TODO not yet fully implemented
+    // // =========================================================================
+    // //TODO not yet fully implemented
     @Override
     public void showTopic(String topicId) {
-        Topic<?> topic = topics.get(topicId);
+        Topic<T, K, V> topic = topics.get(topicId);
         if (topic == null) {
             throw new IllegalArgumentException("Nothing to show, topic not found!");
         }
         topic.showTopic();
     }
 
-    //TODO not yet fully implemented
+    // //TODO not yet fully implemented
     @Override
     public void showConsumerGroup(String groupId) {
         consumerCoordinator.showConsumerGroup(groupId);
     }
 
-    //TODO parallel produce (<producer>, <topic>, <event>)
+    // //TODO parallel produce (<producer>, <topic>, <event>)
 
-    //TODO parallel consume (<consumer>, <partition>
+    // //TODO parallel consume (<consumer>, <partition>
 
-    //TODO set consumer group rebalancing <group> <rebalancing>
+    // //TODO set consumer group rebalancing <group> <rebalancing>
 
-    //TODO playback <consumer> <partition> <offset>
+    // //TODO playback <consumer> <partition> <offset>
 
 }

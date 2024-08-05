@@ -18,6 +18,7 @@ public class Partition<K, V> {
     private static final int DELAY = 0;
     private String partitionId;
     private List<ProducerRecord<K, V>> records;
+    private String consumerId;
 
     public Partition(String partitionId) {
         this.partitionId = partitionId;

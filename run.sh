@@ -40,7 +40,7 @@ if [ $? -eq 0 ]; then
         set timeout -1
         set one_second 0
         set two_seconds 0
-        set half_second 500
+        set half_second 0
 
         # Start the TributaryCLI program
         spawn java -cp \$env(CLASSPATH) tributary.cli.TributaryCLI

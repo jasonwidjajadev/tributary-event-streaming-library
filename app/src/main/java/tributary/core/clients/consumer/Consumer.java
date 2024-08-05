@@ -93,7 +93,8 @@ public class Consumer<K, V> {
         ProducerRecord<K, V> partitionReturn = (ProducerRecord<K, V>) partition.getRecord(index);
         readRecord = new ConsumerRecord<K, V>(partitionReturn.getKey(), partitionReturn.getValue());
 
-        System.out.printf("%-10s%15s%15s%10s%10s%s%n", "Consumer: ", consumerId, "Partition: ", partitionId, "Record: ", readRecord);
+        System.out.printf("%-10s%15s%15s%10s%10s%s%n", "Consumer: ",
+        consumerId, "Partition: ", partitionId, "Record: ", readRecord);
         // System.out.printf("Consumer: %s Consumed: %s From Partition %s\n", consumerId, readRecord, partitionId);
     }
 

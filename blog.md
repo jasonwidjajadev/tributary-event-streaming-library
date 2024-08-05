@@ -40,13 +40,55 @@ tributary
 > A list of usability tests - a “checklist” of scenarios which someone testing your system via the command line interface could use to verify that your system works according to the requirements.
 
 Answer:
+All the usability tests should consist of the basic command individually as well as stress tests these are:
+
+Basic Tests:
+1. Topic creation
+2. Partition creation
+3. Consumer group creation
+4. Create consumer for consumer group
+5. Create consumer for consumer group with same name
+6. Create producer
+7. Create producer of the same name
+8. Show topics
+9. Show consumers
+10. Rebalance and see if output is correct
+11. Rebalance and see if consumers are reallocated
+12. Create events
+13. Create mutiple events
+14. Consume events for single consumers
+15. Consume event for multiple consumers
+16. Playback events to see if consumer keeps track of events correctly
+
+Advanced Tests:
+17. Parallel production test (check to see if produced in the correct order)
+18. Parallel consumption tests
+19. Parallel production test with multiple partitions
+20. Parallel consumption tests with one topic
 
 > An initial UML diagram showing the entities, relationships between entities and key methods/fields in each entity (does not have to be a complete list, it just needs to be a first-version API)
 
 Answer:
 
+Here is the UML
+![](uml_ass3_tributary.png)
+
 > Your design for a Java API by which someone could use your solution to setup an event-driven system.
  A testing plan which explains how you are going to structure your tests for the system. You will need a mix of unit tests on individual components as well as integration tests to check that components work together. Your usability tests will need to be incorporated into this plan as well.
+
+ A good testing plan we have laid out is:
+ 1. Component Testing
+    Test to see if each of the objects we have made fulfills their functionality. This begins with the tributary, then the producer, the consumers, and then the concurrent features
+ 2. Integration Testing
+    Once all the components are put together, The features are tested together to see if they can form a cohesive unit. Examples of such testing is:
+    1. Producing events then consuming events
+    2. Producing multiple events for multiple partitions
+    3. Check if rebalance behavior is as expected
+    4. And such.
+ 3. Usability Testing
+    Use the list given above to do usability testing on the system. 
+ 4. Automated Usability Testing 
+    With bash scripting
 
 Answer:
 
@@ -57,6 +99,8 @@ Answer:
 > Component-driven - creating each component and writing unit tests individually, before bringing the pieces together and usability testing at the end. This approach is harder to usability test incrementally, easier to incorporate with multiple people but can result in more cohesive software and test design (more of a Big Design Up Front Approach)
 
 Answer:
+
+We have chosen a component-driven design. As we are working together in a group using a component driven design is much easier and allows us to manage our time more efficiently. From a coding perspective, it is heavier in the beginning as we have to plan out the UML very well such that later it does not impede the harder steps in making the software. We also believe this exemplified OOP by making our software more reusable in the form of components and also accelerates our development. We also believe it allows us to encapsulate our behavior of the software as necessary. 
 
 > You will need to pick one approach and justify your decision. All of this should occur in a blog post before you start coding. You’ll be able to iterate on the design as you go, this is just the preliminary design.No marks will be awarded for a preliminary design with no implementation.
 

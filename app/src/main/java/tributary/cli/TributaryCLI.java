@@ -143,13 +143,23 @@ public class TributaryCLI {
                         argIndex++;
                         topicId.add(removeLastChar(arg[argIndex]));
                         argIndex++;
-                        event.add(removeLastChar(arg[argIndex]));
+                        event.add(removeChars(arg[argIndex], 2));
                         argIndex++;
                     }
+
+                    //Last bit has to be dropped because assume no comma
+                    event.remove(event.size() - 1);
+                    event.add(removeLastChar(arg[argIndex - 1]));
+
+                    // Debug code for printing
+                    // for (int i = 0; i < producerIds.size(); ++i) {
+                    //     System.out.printf("%s %s %s", producerIds.get(i), topicId.get(i), event.get(i));
+                    // }
 
                     produceEventsParallel(producerIds, topicId, event);
                 }
 
+                break;
             default:
                 System.out.println("Unknown command: \"" + command + "\"");
             }

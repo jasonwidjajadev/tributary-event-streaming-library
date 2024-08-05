@@ -185,6 +185,7 @@ public class ProducerCoordinator {
             @Override
             public void run() {
                 produceEvent(producerId, topic, topicId, event);
+                return;
             }
         });
 

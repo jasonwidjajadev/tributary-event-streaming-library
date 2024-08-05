@@ -173,4 +173,22 @@ public class ConsumerCoordinator {
 
         return true;
     }
+
+    public void consumeEventsParallel(List<String> consumerId, List<String> partitionId) {
+        for (int i = 0; i < consumerId.size(); ++i) {
+            consumeEventsThreaded(consumerId.get(i), partitionId.get(i));
+        }
+    }
+
+    public void consumeEventsThreaded(String consumerId, String partitionId) {
+        Thread consumerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                consumeSingleEvent(consumerId, partitionId);
+                return;
+            }
+        });
+
+        consumerThread.run();
+    }
 }

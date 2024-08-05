@@ -7,31 +7,22 @@ import java.util.Random;
 /**
  * Handles topic creation, configuration, and deletion
  */
-public class Topic<V> {
+public class Topic<T, K, V> {
     private static final String RESET = "\u001B[0m";
-    private static final String BLACK = "\033[0;30m";
-    private static final String RED = "\033[0;31m";
-    private static final String GREEN = "\033[0;32m";
-    private static final String YELLOW = "\033[0;33m";
-    private static final String BLUE = "\033[0;34m";
     private static final String MAGENTA = "\033[0;35m";
-    private static final String CYAN = "\033[0;36m";
-    private static final String WHITE = "\033[0;37m";
     private static final int DELAY = 0;
     private String id;
+    private Class<T> type;
+    private List<Partition<K, V>> partitions;
 
-    //For the purpose of the assignment type is: Integer or String
-    private V type;
-    private List<Partition<String, V>> partitions;
-
-    public Topic(String id, V type) {
+    public Topic(String id, Class<T> type) {
         this.id = id;
         this.type = type;
         this.partitions = new ArrayList<>();
     }
 
     public boolean createPartition(String partitionId) {
-        for (Partition<String, V> p : partitions) {
+        for (Partition<K, V> p : partitions) {
             if (p.getPartitionId().equals(partitionId)) {
                 return false;
             }
@@ -40,15 +31,15 @@ public class Topic<V> {
         return true;
     }
 
-    public List<Partition<String, V>> getPartitions() {
+    public List<Partition<K, V>> getPartitions() {
         return partitions;
     }
 
-    public void setPartitions(List<Partition<String, V>> partitions) {
+    public void setPartitions(List<Partition<K, V>> partitions) {
         this.partitions = partitions;
     }
 
-    public V getType() {
+    public Class<T> getType() {
         return type;
     }
 
@@ -62,7 +53,7 @@ public class Topic<V> {
     }
 
     public String getTypeName() {
-        return type.getClass().getSimpleName().toLowerCase();
+        return type.getSimpleName().toLowerCase();
     }
 
     public String getId() {
@@ -73,8 +64,8 @@ public class Topic<V> {
         this.id = id;
     }
 
-    public Partition<String, V> getPartition(String partitionId) {
-        for (Partition<String, V> p : partitions) {
+    public Partition<K, V> getPartition(String partitionId) {
+        for (Partition<K, V> p : partitions) {
             if (p.getPartitionId().equals(partitionId)) {
                 return p;
             }
@@ -82,7 +73,7 @@ public class Topic<V> {
         return null;
     }
 
-    public Partition<String, V> getRandomPartition() {
+    public Partition<K, V> getRandomPartition() {
         if (partitions.isEmpty()) {
             return null;
         }
@@ -102,11 +93,7 @@ public class Topic<V> {
             Thread.sleep(DELAY);
             System.out.println(MAGENTA + "+ " + RESET + "Topic type:                " + this.getTypeName());
             System.out.println("");
-
-            // int index = 1;
-            for (Partition<String, V> p : partitions) {
-                // System.out.printf("%-10s%20s%15s%n", "Partition", "| Index", "| Events");
-                // System.out.println("");
+            for (Partition<K, V> p : partitions) {
                 System.out.println("Partition      | Index       | Events");
                 System.out.println("- - - - - - -  + - - - - - - + - - - - - ");
                 p.printRecords();

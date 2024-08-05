@@ -13,20 +13,21 @@ import tributary.core.clients.producer.ProducerRecord;
 import tributary.core.common.Partition;
 import tributary.core.common.Topic;
 
-public class ProducerCoordinator {
-    private static final String RESET = "\u001B[0m";
-    private static final String MAGENTA = "\033[0;35m";
+public class ProducerCoordinator<T, K, V> {
+    // private static final String RESET = "\u001B[0m";
+    // private static final String MAGENTA = "\033[0;35m";
     private static final int DELAY = 0;
-    private Map<String, Producer<?, ?>> producers = new HashMap<>();
+    private Map<String, Producer<T>> producers = new HashMap<>();
 
-    public boolean createProducer(String producerId, Object instance, String allocation) {
-        if (producers.containsKey(producerId)) {
+    public boolean addProducer(String producerId, Producer<T> producer, String allocation) {
+        if (producers.get(producerId) != null) {
             throw new IllegalArgumentException("Error: choose another name, producerId already exist!");
         }
-        producers.put(producerId, new Producer<>(producerId, instance, allocation));
+        producers.put(producerId, producer);
         return true;
     }
 
+    // =========================================================================
     /**
      * 7. - Produces a new event from the given producer to the given topic.
      *    - How you represent the event is up to you. We recommend using a JSON
@@ -41,19 +42,18 @@ public class ProducerCoordinator {
      *
      *      Manual Producer,
      */
-    public boolean produceEvent(String producerId, Topic<?> topic, String topicId, String event) {
-        Producer<?, ?> producer = producers.get(producerId);
+    public boolean produceEvent(String producerId, Topic<T, K, V> topic, String topicId, String event) {
+        Producer<T> producer = producers.get(producerId);
         if (producer == null) {
             throw new IllegalArgumentException("Producer ID not found!");
         }
-        if (!isTypeCompatible(producer.getType(), topic.getType())) {
+
+        if (!producer.getTypeName().equals(topic.getTypeName())) {
             System.err.println("Error: producer can't produce to this topic, type mismatch");
             return false;
         }
         try {
-            // String eventJson = new String(Files.readAllBytes(Paths.get(event)));
             JSONObject eventNode = new JSONObject(FileLoader.loadResourceFile(event));
-            // JSONObject eventNode = new JSONObject(eventJson);
             JSONObject headers = eventNode.getJSONObject("headers");
             Long timestamp = headers.getLong("timestamp");
             String eventId = headers.getString("id");
@@ -61,13 +61,12 @@ public class ProducerCoordinator {
 
             String key = eventNode.getString("key");
             String value = eventNode.getJSONObject("value").toString();
-
-            if (!producer.getTypeName().equals(payloadType.toLowerCase())) {
+            if (!producer.getTypeName().toLowerCase().equals(payloadType.toLowerCase())) {
                 System.err.println("Error: payload type mismatch, producer and event key");
                 return false;
             }
 
-            if (!topic.getTypeName().equals(payloadType.toLowerCase())) {
+            if (!topic.getTypeName().toLowerCase().equals(payloadType.toLowerCase())) {
                 System.err.println("Error: payload type mismatch, topic and event key");
                 return false;
             }
@@ -77,7 +76,7 @@ public class ProducerCoordinator {
                 System.err.println("Error: producer is manual producer, must provide partitionId");
                 return false;
             }
-            Partition<String, ?> partition = topic.getRandomPartition();
+            Partition<K, V> partition = topic.getRandomPartition();
             if (partition == null) {
                 throw new IllegalArgumentException("Partition not found!");
             }
@@ -104,25 +103,22 @@ public class ProducerCoordinator {
         }
     }
 
-    public boolean produceEvent(String producerId, Topic<?> topic, String topicId, String event, String partitionId) {
-        Producer<?, ?> producer = producers.get(producerId);
+    public boolean produceEvent(String producerId, Topic<T, K, V> topic, String topicId, String event,
+            String partitionId) {
+        Producer<T> producer = producers.get(producerId);
         if (producer == null) {
             throw new IllegalArgumentException("Producer ID not found!");
         }
-        if (!isTypeCompatible(producer.getType(), topic.getType())) {
+        if (!producer.getTypeName().equals(topic.getTypeName())) {
             System.err.println("Error: producer can't produce to this topic, type mismatch");
             return false;
         }
         try {
-            // String eventJson = new String(Files.readAllBytes(Paths.get(event)));
             JSONObject eventNode = new JSONObject(FileLoader.loadResourceFile(event));
-            // JSONObject eventNode = new JSONObject(eventJson);
-
             JSONObject headers = eventNode.getJSONObject("headers");
             Long timestamp = headers.getLong("timestamp");
             String eventId = headers.getString("id");
             String payloadType = headers.getString("payloadType");
-
             String key = eventNode.getString("key");
             String value = eventNode.getJSONObject("value").toString();
 
@@ -130,18 +126,16 @@ public class ProducerCoordinator {
                 System.err.println("Error: payload type mismatch, producer and event key");
                 return false;
             }
-
             if (!topic.getTypeName().equals(payloadType.toLowerCase())) {
                 System.err.println("Error: payload type mismatch, topic and event key");
                 return false;
             }
-
             String allocation = producer.getAllocation();
             if (allocation.equals("random")) {
                 System.err.println("Error: producer is Random producer, remove partitionId");
                 return false;
             }
-            Partition<String, ?> partition = topic.getPartition(partitionId);
+            Partition<K, V> partition = topic.getPartition(partitionId);
             if (partition == null) {
                 throw new IllegalArgumentException("Partition not found!");
             }
@@ -168,19 +162,17 @@ public class ProducerCoordinator {
         }
     }
 
+    // =========================================================================
     //Function assumes all lists are of the same size
-    public void produceEventsParallel(
-        Map<String, Topic<?>> topics,
-        List<String> producerIds,
-        List<String> topicId,
-        List<String> event) {
-            for (int i = 0; i < producerIds.size(); ++i) {
-                Topic<?> currTopic = topics.get(topicId.get(i));
-                produceEventThreaded(producerIds.get(i), currTopic, topicId.get(i), event.get(i));
-            }
+    public void produceEventsParallel(Map<String, Topic<T, K, V>> topics, List<String> producerIds,
+            List<String> topicId, List<String> event) {
+        for (int i = 0; i < producerIds.size(); ++i) {
+            Topic<T, K, V> currTopic = topics.get(topicId.get(i));
+            produceEventThreaded(producerIds.get(i), currTopic, topicId.get(i), event.get(i));
+        }
     }
 
-    private void produceEventThreaded(String producerId, Topic<?> topic, String topicId, String event) {
+    private void produceEventThreaded(String producerId, Topic<T, K, V> topic, String topicId, String event) {
         Thread producerThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -192,12 +184,4 @@ public class ProducerCoordinator {
         producerThread.run();
     }
 
-    private boolean isTypeCompatible(Object type, Object event) {
-        if (type instanceof String && event instanceof String) {
-            return true;
-        } else if (type instanceof Integer && event instanceof Integer) {
-            return true;
-        }
-        return false;
-    }
 }

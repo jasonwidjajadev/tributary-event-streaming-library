@@ -4,9 +4,9 @@ package tributary.core.clients.producer;
  * The main API that applications use to send record to topics.
  */
 
-public class Producer<K, V> {
-    private K id;
-    private V type;
+public class Producer<T> {
+    private String id;
+    private Class<T> type;
     private String allocation;
 
     /**
@@ -15,7 +15,7 @@ public class Producer<K, V> {
      * @param id   the unique ID for the producer
      * @param type the type of events the producer will produce
      */
-    public Producer(K id, V type) {
+    public Producer(String id, Class<T> type) {
         this.id = id;
         this.type = type;
         this.allocation = null;
@@ -27,7 +27,7 @@ public class Producer<K, V> {
      * @param type       the type of events the producer will produce
      * @param allocation the allocation method for partition selection (Random or Manual)
      */
-    public Producer(K id, V type, String allocation) {
+    public Producer(String id, Class<T> type, String allocation) {
         this.id = id;
         this.type = type;
         this.allocation = allocation;
@@ -37,16 +37,16 @@ public class Producer<K, V> {
         return allocation;
     }
 
-    public V getType() {
+    public String getTypeName() {
+        return type.getSimpleName().toLowerCase();
+    }
+
+    public Class<T> getType() {
         return type;
     }
 
-    public void setType(V type) {
-        this.type = type;
-    }
-
-    public String getTypeName() {
-        return type.getClass().getSimpleName().toLowerCase();
+    public String getName() {
+        return type.getSimpleName();
     }
 
     @Override

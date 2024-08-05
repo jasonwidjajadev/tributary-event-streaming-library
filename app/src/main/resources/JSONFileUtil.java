@@ -68,10 +68,6 @@ public class JSONFileUtil {
     }
 
     //Taken from https://stackoverflow.com/questions/7438612/how-to-remove-the-last-character-from-a-string
-    private static String removeLastChar(String str) {
-        return removeChars(str, 1);
-    }
-
     private static String removeChars(String str, int numberOfCharactersToRemove) {
         if (str != null && !str.trim().isEmpty()) {
             return str.substring(0, str.length() - numberOfCharactersToRemove);

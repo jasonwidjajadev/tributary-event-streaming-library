@@ -36,7 +36,7 @@ public class TributaryCLI<T, K, V> {
         cli.run();
     }
 
-    private void run() {
+    public void run() {
         System.out.println("");
         System.out.println("=======================================================");
         System.out.println("       ______     _ __          __                   ");

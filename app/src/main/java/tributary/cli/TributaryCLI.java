@@ -13,30 +13,16 @@ public class TributaryCLI<T, K, V> {
     private int counter = 0;
     private static final int DELAY = 0;
     private static final String RESET = "\u001B[0m";
-    // private static final String BLACK = "\033[0;30m";
-    // private static final String RED = "\033[0;31m";
     private static final String GREEN = "\033[0;32m";
-    // private static final String YELLOW = "\033[0;33m";
-    // private static final String BLUE = "\033[0;34m";
     private static final String MAGENTA = "\033[0;35m";
-    // private static final String CYAN = "\033[0;36m";
-    // private static final String WHITE = "\033[0;37m";
-
-    // private static final String BOLD_BLACK = "\033[1;30m";
     private static final String BOLD_RED = "\033[1;31m";
-    // private static final String BOLD_GREEN = "\033[1;32m";
-    // private static final String BOLD_YELLOW = "\033[1;33m";
-    // private static final String BOLD_BLUE = "\033[1;34m";
-    // private static final String BOLD_MAGENTA = "\033[1;35m";
-    // private static final String BOLD_CYAN = "\033[1;36m";
-    // private static final String BOLD_WHITE = "\033[1;37m";
 
     public static void main(String[] args) {
         TributaryCLI<String, String, String> cli = new TributaryCLI<>();
         cli.run();
     }
 
-    private void run() {
+    public void run() {
         System.out.println("");
         System.out.println("=======================================================");
         System.out.println("       ______     _ __          __                   ");
@@ -144,12 +130,6 @@ public class TributaryCLI<T, K, V> {
                     //Last bit has to be dropped because assume no comma
                     event.remove(event.size() - 1);
                     event.add(removeLastChar(arg[argIndex - 1]));
-
-                    // Debug code for printing
-                    // for (int i = 0; i < producerIds.size(); ++i) {
-                    //     System.out.printf("%s %s %s", producerIds.get(i), topicId.get(i), event.get(i));
-                    // }
-
                     produceEventsParallel(producerIds, topicId, event);
 
                 } else if ("consume".equals(arg[1])) {
@@ -166,12 +146,6 @@ public class TributaryCLI<T, K, V> {
 
                     partitionId.remove(partitionId.size() - 1);
                     partitionId.add(removeLastChar(arg[argIndex - 1]));
-
-                    // Debug code for printing
-                    // for (int i = 0; i < partitionId.size(); ++i) {
-                    //     System.out.printf("%s %s ", consumerId.get(i), partitionId.get(i));
-                    // }
-
                     consumeEventsParallel(consumerId, partitionId);
                 }
 

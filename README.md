@@ -8,6 +8,10 @@ This project implements an event-driven messaging pipeline where
 **producers publish events** and **consumers process them asynchronously
 through partitioned streams**.
 
+Full Project walkthrough can be viewed here: https://youtu.be/9iNplsP8I0U
+
+<img src="cli.png" alt="dashboard img" width="800" style="border:1px solid #ccc; border-radius:3px;">
+
 ------------------------------------------------------------------------
 
 ## Overview
